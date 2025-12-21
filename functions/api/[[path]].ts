@@ -21,6 +21,14 @@ interface NavItem {
   order: number;
 }
 
+interface ShareLink {
+  id: string;
+  appid: string;
+  params?: string;      // 额外携带的参数
+  expiresAt?: number;   // 过期时间戳，undefined 表示永久
+  createdAt: number;
+}
+
 interface AppSettings {
   apiKey: string;
   authUsername?: string;
@@ -31,12 +39,14 @@ interface AppData {
   categories: Category[];
   navItems: NavItem[];
   settings: AppSettings;
+  shareLinks?: ShareLink[];
 }
 
 const DEFAULT_APP_DATA: AppData = {
   categories: [{ id: 'all', name: '全部', order: 0 }],
   navItems: [],
   settings: { apiKey: '', authUsername: 'admin', authPassword: 'admin123' },
+  shareLinks: [],
 };
 
 // Cloudflare KV namespace interface
@@ -106,7 +116,7 @@ function jsonResponse(data: unknown, status = 200): Response {
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     },
   });
@@ -228,6 +238,144 @@ function handleHealth(): Response {
   return jsonResponse({ status: 'ok', timestamp: new Date().toISOString() });
 }
 
+// Handle GET /api/go/:id - Redirect to target link
+async function handleGo(storage: KVAdapter, shareId: string): Promise<Response> {
+  try {
+    const data = await storage.getData();
+    const shareLinks = data.shareLinks || [];
+    
+    // Find share link
+    const shareLink = shareLinks.find(s => s.id === shareId);
+    if (!shareLink) {
+      return new Response('Link not found', { status: 404 });
+    }
+    
+    // Check expiration
+    if (shareLink.expiresAt && Date.now() > shareLink.expiresAt) {
+      return new Response('Link expired', { status: 410 });
+    }
+    
+    // Find nav item
+    const navItem = data.navItems.find(item => item.appid === shareLink.appid);
+    if (!navItem) {
+      return new Response('Target not found', { status: 404 });
+    }
+    
+    // Build redirect URL with params
+    let targetUrl = navItem.link;
+    if (shareLink.params) {
+      const separator = targetUrl.includes('?') ? '&' : '?';
+      targetUrl = targetUrl + separator + shareLink.params;
+    }
+    
+    return Response.redirect(targetUrl, 302);
+  } catch {
+    return new Response('Internal server error', { status: 500 });
+  }
+}
+
+// Handle POST /api/share - Create share link
+async function handleCreateShare(storage: KVAdapter, request: Request): Promise<Response> {
+  try {
+    const body = await request.json() as {
+      appid: string;
+      params?: string;
+      expiresIn?: number; // minutes, 0 or undefined = permanent
+    };
+    
+    if (!body.appid) {
+      return errorResponse('Missing required parameter: appid', 400);
+    }
+    
+    const data = await storage.getData();
+    
+    // Verify appid exists
+    const navItem = data.navItems.find(item => item.appid === body.appid);
+    if (!navItem) {
+      return errorResponse('AppID not found', 404);
+    }
+    
+    // Generate share link
+    const shareLink: ShareLink = {
+      id: generateShareId(),
+      appid: body.appid,
+      params: body.params,
+      expiresAt: body.expiresIn ? Date.now() + body.expiresIn * 60 * 1000 : undefined,
+      createdAt: Date.now(),
+    };
+    
+    // Save share link
+    if (!data.shareLinks) {
+      data.shareLinks = [];
+    }
+    data.shareLinks.push(shareLink);
+    await storage.saveData(data);
+    
+    return jsonResponse({
+      success: true,
+      shareLink: {
+        id: shareLink.id,
+        url: `/api/go/${shareLink.id}`,
+        expiresAt: shareLink.expiresAt,
+        permanent: !shareLink.expiresAt,
+      }
+    });
+  } catch {
+    return errorResponse('Internal server error', 500);
+  }
+}
+
+// Handle GET /api/shares - List share links
+async function handleListShares(storage: KVAdapter): Promise<Response> {
+  try {
+    const data = await storage.getData();
+    const shareLinks = (data.shareLinks || []).map(s => ({
+      id: s.id,
+      appid: s.appid,
+      params: s.params,
+      expiresAt: s.expiresAt,
+      permanent: !s.expiresAt,
+      expired: s.expiresAt ? Date.now() > s.expiresAt : false,
+      createdAt: s.createdAt,
+    }));
+    
+    return jsonResponse({ success: true, shareLinks });
+  } catch {
+    return errorResponse('Internal server error', 500);
+  }
+}
+
+// Handle DELETE /api/share/:id - Delete share link
+async function handleDeleteShare(storage: KVAdapter, shareId: string): Promise<Response> {
+  try {
+    const data = await storage.getData();
+    if (!data.shareLinks) {
+      return errorResponse('Share link not found', 404);
+    }
+    
+    const index = data.shareLinks.findIndex(s => s.id === shareId);
+    if (index === -1) {
+      return errorResponse('Share link not found', 404);
+    }
+    
+    data.shareLinks.splice(index, 1);
+    await storage.saveData(data);
+    
+    return jsonResponse({ success: true, message: 'Share link deleted' });
+  } catch {
+    return errorResponse('Internal server error', 500);
+  }
+}
+
+function generateShareId(): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 // Handle GET /api/debug - Debug endpoint to check stored data
 async function handleDebug(storage: KVAdapter, url: URL): Promise<Response> {
   try {
@@ -264,7 +412,7 @@ function handleOptions(): Response {
     status: 204,
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     },
   });
@@ -319,6 +467,33 @@ export async function onRequest(context: CFContext): Promise<Response> {
         return handleUpdateLink(storage, url);
       }
       break;
+
+    case 'share':
+      if (method === 'POST') {
+        return handleCreateShare(storage, request);
+      }
+      break;
+
+    case 'shares':
+      if (method === 'GET') {
+        return handleListShares(storage);
+      }
+      break;
+  }
+
+  // Handle dynamic routes: go/:id, share/:id
+  if (apiPath.startsWith('go/')) {
+    const shareId = apiPath.substring(3);
+    if (method === 'GET') {
+      return handleGo(storage, shareId);
+    }
+  }
+
+  if (apiPath.startsWith('share/')) {
+    const shareId = apiPath.substring(6);
+    if (method === 'DELETE') {
+      return handleDeleteShare(storage, shareId);
+    }
   }
 
   // 404 for unmatched routes

@@ -30,12 +30,37 @@ export interface AppSettings {
 }
 
 /**
+ * ShareLink - 分享链接
+ */
+export interface ShareLink {
+  id: string;
+  appid: string;
+  params?: string;      // 额外携带的参数
+  expiresAt?: number;   // 过期时间戳，undefined 表示永久
+  createdAt: number;
+}
+
+/**
+ * ShareLinkDisplay - 分享链接显示格式
+ */
+export interface ShareLinkDisplay {
+  id: string;
+  appid: string;
+  params?: string;
+  expiresAt?: number;
+  permanent: boolean;
+  expired: boolean;
+  createdAt: number;
+}
+
+/**
  * AppData - 应用数据
  */
 export interface AppData {
   categories: Category[];
   navItems: NavItem[];
   settings: AppSettings;
+  shareLinks?: ShareLink[];
 }
 
 /**

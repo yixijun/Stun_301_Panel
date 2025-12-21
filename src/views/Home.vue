@@ -5,12 +5,14 @@ import Sidebar from '../components/Sidebar.vue';
 import NavGrid from '../components/NavGrid.vue';
 import EditModal from '../components/EditModal.vue';
 import SettingsModal from '../components/SettingsModal.vue';
+import ShareModal from '../components/ShareModal.vue';
 
 const store = useNavStore();
 
 // Modal states
 const showSettingsModal = ref(false);
 const showEditModal = ref(false);
+const showShareModal = ref(false);
 const editModalType = ref<'category' | 'navItem'>('category');
 const editingId = ref<string | null>(null);
 
@@ -70,6 +72,15 @@ function closeEditModal() {
   showEditModal.value = false;
   editingId.value = null;
 }
+
+// Share modal handlers
+function openShareModal() {
+  showShareModal.value = true;
+}
+
+function closeShareModal() {
+  showShareModal.value = false;
+}
 </script>
 
 <template>
@@ -83,6 +94,9 @@ function closeEditModal() {
     
     <main class="main-content">
       <div class="content-header" v-if="store.isEditMode">
+        <button class="share-btn" @click="openShareModal">
+          <span>🔗</span> 分享链接
+        </button>
         <button class="add-nav-btn" @click="openAddNavItem">
           <span>➕</span> 添加导航项
         </button>
@@ -115,6 +129,12 @@ function closeEditModal() {
       :editing-id="editingId"
       @close="closeEditModal"
     />
+
+    <!-- Share Modal -->
+    <ShareModal
+      v-if="showShareModal"
+      @close="closeShareModal"
+    />
   </div>
 </template>
 
@@ -136,6 +156,25 @@ function closeEditModal() {
   margin-bottom: 1.5rem;
   display: flex;
   justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.share-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.share-btn:hover {
+  background: #5a6268;
 }
 
 .add-nav-btn {
@@ -184,7 +223,13 @@ function closeEditModal() {
   }
 
   .add-nav-btn {
-    width: 100%;
+    flex: 1;
+    justify-content: center;
+    padding: 0.8rem 1rem;
+  }
+
+  .share-btn {
+    flex: 1;
     justify-content: center;
     padding: 0.8rem 1rem;
   }

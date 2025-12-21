@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AppData } from '../types';
+import type { AppData, ShareLinkDisplay } from '../types';
 import { DEFAULT_APP_DATA } from '../types';
 
 const API_BASE_URL = '/api';
@@ -15,6 +15,21 @@ interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
+}
+
+interface CreateShareResponse {
+  success: boolean;
+  shareLink: {
+    id: string;
+    url: string;
+    expiresAt?: number;
+    permanent: boolean;
+  };
+}
+
+interface ListSharesResponse {
+  success: boolean;
+  shareLinks: ShareLinkDisplay[];
 }
 
 export const apiClient = {
@@ -59,6 +74,33 @@ export const apiClient = {
     await axiosInstance.post('/link', null, {
       params: { key, appid, link }
     });
+  },
+
+  /**
+   * Create a share link
+   */
+  async createShareLink(appid: string, params?: string, expiresIn?: number): Promise<CreateShareResponse['shareLink']> {
+    const response = await axiosInstance.post<CreateShareResponse>('/share', {
+      appid,
+      params,
+      expiresIn
+    });
+    return response.data.shareLink;
+  },
+
+  /**
+   * List all share links
+   */
+  async listShareLinks(): Promise<ShareLinkDisplay[]> {
+    const response = await axiosInstance.get<ListSharesResponse>('/shares');
+    return response.data.shareLinks;
+  },
+
+  /**
+   * Delete a share link
+   */
+  async deleteShareLink(id: string): Promise<void> {
+    await axiosInstance.delete(`/share/${id}`);
   }
 };
 

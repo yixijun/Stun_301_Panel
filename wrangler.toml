@@ -13,7 +13,7 @@ pages_build_output_dir = "dist"
 
 [[kv_namespaces]]
 binding = "NAV_PORTAL_DATA"
-id = "YOUR_KV_NAMESPACE_ID"
+id = "7d961d1eb0f44b04929334741fcb7161"
 # For local development with wrangler pages dev, use preview_id
 # preview_id = "YOUR_PREVIEW_KV_NAMESPACE_ID"
 

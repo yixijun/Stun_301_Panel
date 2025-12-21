@@ -122,9 +122,14 @@ async function validateApiKey(storage: KVAdapter, key: string | null): Promise<R
   }
 
   const data = await storage.getData();
-  const validApiKey = data.settings.apiKey;
+  const validApiKey = data.settings?.apiKey;
 
-  if (!validApiKey || key !== validApiKey) {
+  // If no API key is configured, reject all requests
+  if (!validApiKey) {
+    return errorResponse('API key not configured', 401);
+  }
+
+  if (key !== validApiKey) {
     return errorResponse('Invalid API key', 401);
   }
 
@@ -146,11 +151,16 @@ async function handleSaveData(storage: KVAdapter, request: Request): Promise<Res
   try {
     const data: AppData = await request.json();
 
-    if (!data || !data.categories || !data.navItems || !data.settings) {
+    if (!data || !data.categories || !data.navItems) {
       return errorResponse(
-        'Missing required parameter: data must include categories, navItems, and settings',
+        'Missing required parameter: data must include categories and navItems',
         400
       );
+    }
+
+    // Ensure settings exists with default values if not provided
+    if (!data.settings) {
+      data.settings = { apiKey: '' };
     }
 
     await storage.saveData(data);

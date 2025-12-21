@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useNavStore } from '../stores/navStore';
 import type { AppData } from '../types';
 
@@ -12,6 +12,11 @@ const store = useNavStore();
 // API Key
 const apiKey = ref(store.settings.apiKey);
 const apiKeySaved = ref(false);
+
+// Watch for store settings changes (in case data loads after component mounts)
+watch(() => store.settings.apiKey, (newValue) => {
+  apiKey.value = newValue;
+}, { immediate: true });
 
 // Import/Export
 const importError = ref<string | null>(null);

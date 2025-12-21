@@ -112,11 +112,13 @@ npm run pages:dev
 
 ## Webhook API 使用
 
+Webhook API 允许你通过 HTTP 请求自动更新导航项的链接，适用于动态 IP 更新、DDNS 场景等。
+
 ### 配置 API Key
 
 1. 打开导航页
 2. 点击左下角 **设置** 按钮
-3. 在 **API Key** 输入框中设置密钥
+3. 在 **API Key** 输入框中设置密钥（建议使用随机字符串）
 4. 点击保存
 
 ### API 端点
@@ -126,6 +128,12 @@ npm run pages:dev
 ```
 GET /api/link?key={API_KEY}&appid={APP_ID}
 ```
+
+**参数说明：**
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| key | 是 | 在设置中配置的 API Key |
+| appid | 是 | 导航项的唯一标识符 |
 
 **响应示例：**
 ```json
@@ -140,6 +148,13 @@ GET /api/link?key={API_KEY}&appid={APP_ID}
 ```
 POST /api/link?key={API_KEY}&appid={APP_ID}&link={NEW_LINK}
 ```
+
+**参数说明：**
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| key | 是 | 在设置中配置的 API Key |
+| appid | 是 | 导航项的唯一标识符 |
+| link | 是 | 新的链接地址（需要 URL 编码） |
 
 **响应示例：**
 ```json
@@ -156,8 +171,11 @@ POST /api/link?key={API_KEY}&appid={APP_ID}&link={NEW_LINK}
 | 400 | Missing required parameter | 缺少必要参数 |
 | 401 | Invalid API key | API Key 无效 |
 | 404 | AppID not found | 找不到指定的导航项 |
+| 500 | Internal server error | 服务器内部错误 |
 
 ### 使用示例
+
+#### cURL 命令
 
 ```bash
 # 获取链接
@@ -165,7 +183,165 @@ curl "https://your-domain.pages.dev/api/link?key=your-api-key&appid=my-app"
 
 # 更新链接
 curl -X POST "https://your-domain.pages.dev/api/link?key=your-api-key&appid=my-app&link=https://new-url.com"
+
+# 更新链接（带端口）
+curl -X POST "https://your-domain.pages.dev/api/link?key=your-api-key&appid=my-app&link=https%3A%2F%2F192.168.1.1%3A8080"
 ```
+
+#### Python 脚本
+
+```python
+import requests
+from urllib.parse import quote
+
+BASE_URL = "https://your-domain.pages.dev"
+API_KEY = "your-api-key"
+APP_ID = "my-app"
+
+# 获取当前链接
+response = requests.get(f"{BASE_URL}/api/link", params={
+    "key": API_KEY,
+    "appid": APP_ID
+})
+print(response.json())
+
+# 更新链接
+new_link = "https://192.168.1.1:8080"
+response = requests.post(f"{BASE_URL}/api/link", params={
+    "key": API_KEY,
+    "appid": APP_ID,
+    "link": new_link
+})
+print(response.json())
+```
+
+#### Shell 脚本（自动更新 IP）
+
+```bash
+#!/bin/bash
+# 自动获取公网 IP 并更新导航链接
+
+BASE_URL="https://your-domain.pages.dev"
+API_KEY="your-api-key"
+APP_ID="my-server"
+PORT="8080"
+
+# 获取公网 IP
+PUBLIC_IP=$(curl -s https://api.ipify.org)
+
+# 构建新链接
+NEW_LINK="http://${PUBLIC_IP}:${PORT}"
+
+# 更新导航链接
+curl -X POST "${BASE_URL}/api/link?key=${API_KEY}&appid=${APP_ID}&link=$(echo $NEW_LINK | sed 's/:/%3A/g; s/\//%2F/g')"
+
+echo "Updated ${APP_ID} to ${NEW_LINK}"
+```
+
+#### 定时任务（Linux Cron）
+
+```bash
+# 每 5 分钟更新一次 IP
+*/5 * * * * /path/to/update-ip.sh >> /var/log/nav-update.log 2>&1
+```
+
+#### Windows 计划任务（PowerShell）
+
+```powershell
+# update-nav.ps1
+$baseUrl = "https://your-domain.pages.dev"
+$apiKey = "your-api-key"
+$appId = "my-server"
+$port = "8080"
+
+# 获取公网 IP
+$publicIp = (Invoke-WebRequest -Uri "https://api.ipify.org" -UseBasicParsing).Content
+
+# 构建新链接
+$newLink = "http://${publicIp}:${port}"
+$encodedLink = [System.Web.HttpUtility]::UrlEncode($newLink)
+
+# 更新导航链接
+$response = Invoke-WebRequest -Uri "${baseUrl}/api/link?key=${apiKey}&appid=${appId}&link=${encodedLink}" -Method POST
+Write-Host "Updated ${appId} to ${newLink}"
+Write-Host $response.Content
+```
+
+### 典型应用场景
+
+#### 1. DDNS 动态域名更新
+
+当你的服务器使用动态 IP 时，可以配合脚本定期更新导航链接：
+
+```bash
+# 检测 IP 变化并更新
+#!/bin/bash
+CURRENT_IP=$(curl -s https://api.ipify.org)
+LAST_IP_FILE="/tmp/last_ip.txt"
+
+if [ -f "$LAST_IP_FILE" ]; then
+    LAST_IP=$(cat $LAST_IP_FILE)
+else
+    LAST_IP=""
+fi
+
+if [ "$CURRENT_IP" != "$LAST_IP" ]; then
+    echo "IP changed from $LAST_IP to $CURRENT_IP"
+    # 更新所有需要更新的导航项
+    curl -X POST "https://your-domain.pages.dev/api/link?key=your-api-key&appid=home-server&link=http://${CURRENT_IP}:8080"
+    curl -X POST "https://your-domain.pages.dev/api/link?key=your-api-key&appid=nas&link=http://${CURRENT_IP}:5000"
+    echo $CURRENT_IP > $LAST_IP_FILE
+fi
+```
+
+#### 2. 服务健康检查后更新
+
+```python
+import requests
+
+def check_and_update(appid, primary_url, backup_url, api_key, base_url):
+    """检查主服务是否可用，不可用则切换到备用"""
+    try:
+        response = requests.get(primary_url, timeout=5)
+        if response.status_code == 200:
+            target_url = primary_url
+        else:
+            target_url = backup_url
+    except:
+        target_url = backup_url
+    
+    # 更新导航链接
+    requests.post(f"{base_url}/api/link", params={
+        "key": api_key,
+        "appid": appid,
+        "link": target_url
+    })
+
+# 使用示例
+check_and_update(
+    appid="my-service",
+    primary_url="https://primary.example.com",
+    backup_url="https://backup.example.com",
+    api_key="your-api-key",
+    base_url="https://your-domain.pages.dev"
+)
+```
+
+#### 3. Docker 容器启动时更新
+
+```dockerfile
+# Dockerfile
+FROM your-image
+# ... 其他配置 ...
+CMD sh -c 'curl -X POST "https://your-domain.pages.dev/api/link?key=${API_KEY}&appid=${APP_ID}&link=http://$(hostname -i):${PORT}" && exec your-app'
+```
+
+### 安全建议
+
+1. **使用强密码作为 API Key**：建议使用 32 位以上的随机字符串
+2. **使用 HTTPS**：确保 API 调用通过 HTTPS 进行
+3. **限制 API Key 暴露**：不要在公开代码中硬编码 API Key
+4. **定期更换 API Key**：建议定期更换以提高安全性
 
 ---
 

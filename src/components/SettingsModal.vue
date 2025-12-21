@@ -13,9 +13,18 @@ const store = useNavStore();
 const apiKey = ref(store.settings.apiKey);
 const apiKeySaved = ref(false);
 
+// Auth credentials
+const authUsername = ref(store.settings.authUsername || 'admin');
+const authPassword = ref('');
+const authSaved = ref(false);
+
 // Watch for store settings changes (in case data loads after component mounts)
 watch(() => store.settings.apiKey, (newValue) => {
   apiKey.value = newValue;
+}, { immediate: true });
+
+watch(() => store.settings.authUsername, (newValue) => {
+  authUsername.value = newValue || 'admin';
 }, { immediate: true });
 
 // Import/Export
@@ -33,6 +42,25 @@ function saveApiKey() {
   setTimeout(() => {
     apiKeySaved.value = false;
   }, 2000);
+}
+
+// Auth handlers
+function saveAuthCredentials() {
+  if (!authUsername.value.trim()) {
+    return;
+  }
+  const newPassword = authPassword.value.trim() || store.settings.authPassword || 'admin123';
+  store.updateAuthCredentials(authUsername.value.trim(), newPassword);
+  authPassword.value = '';
+  authSaved.value = true;
+  setTimeout(() => {
+    authSaved.value = false;
+  }, 2000);
+}
+
+function handleLogout() {
+  store.logout();
+  emit('close');
 }
 
 // Export handler
@@ -149,6 +177,42 @@ function handleOverlayClick(event: Event) {
       </div>
       
       <div class="settings-content">
+        <!-- Auth Section -->
+        <section class="settings-section">
+          <h3>登录设置</h3>
+          <p class="section-desc">修改网页登录的用户名和密码</p>
+          
+          <div class="form-group">
+            <label>用户名</label>
+            <input
+              v-model="authUsername"
+              type="text"
+              placeholder="输入用户名"
+            />
+          </div>
+          
+          <div class="form-group">
+            <label>新密码</label>
+            <input
+              v-model="authPassword"
+              type="password"
+              placeholder="留空则不修改密码"
+            />
+          </div>
+          
+          <div class="auth-actions">
+            <button 
+              @click="saveAuthCredentials"
+              :class="{ success: authSaved }"
+            >
+              {{ authSaved ? '已保存 ✓' : '保存登录设置' }}
+            </button>
+            <button class="danger" @click="handleLogout">
+              退出登录
+            </button>
+          </div>
+        </section>
+
         <!-- API Key Section -->
         <section class="settings-section">
           <h3>API 密钥</h3>
@@ -272,6 +336,20 @@ function handleOverlayClick(event: Event) {
 .api-key-input button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.auth-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.auth-actions button {
+  flex: 1;
+}
+
+.auth-actions button.success {
+  background: var(--success-color);
 }
 
 .data-actions {

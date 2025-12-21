@@ -13,6 +13,7 @@ export const useNavStore = defineStore('nav', () => {
   const selectedCategoryId = ref('all');
   const isLoading = ref(false);
   const error = ref<string | null>(null);
+  const isAuthenticated = ref(false);
 
   // Getters
   const filteredNavItems = computed(() => {
@@ -214,6 +215,45 @@ export const useNavStore = defineStore('nav', () => {
     saveData();
   }
 
+  function updateAuthCredentials(username: string, password: string): void {
+    settings.value.authUsername = username;
+    settings.value.authPassword = password;
+    saveData();
+  }
+
+  // Actions - Authentication
+  async function login(username: string, password: string): Promise<boolean> {
+    // 先加载数据获取认证信息
+    if (categories.value.length <= 1 && navItems.value.length === 0) {
+      await loadData();
+    }
+    
+    const validUsername = settings.value.authUsername || 'admin';
+    const validPassword = settings.value.authPassword || 'admin123';
+    
+    if (username === validUsername && password === validPassword) {
+      isAuthenticated.value = true;
+      // 保存登录状态到 sessionStorage
+      sessionStorage.setItem('nav_auth', 'true');
+      return true;
+    }
+    return false;
+  }
+
+  function logout(): void {
+    isAuthenticated.value = false;
+    sessionStorage.removeItem('nav_auth');
+  }
+
+  function checkAuth(): boolean {
+    const auth = sessionStorage.getItem('nav_auth');
+    if (auth === 'true') {
+      isAuthenticated.value = true;
+      return true;
+    }
+    return false;
+  }
+
   // Actions - Import/Export
   function exportData(): AppData {
     return {
@@ -265,6 +305,7 @@ export const useNavStore = defineStore('nav', () => {
     selectedCategoryId,
     isLoading,
     error,
+    isAuthenticated,
     
     // Getters
     filteredNavItems,
@@ -295,6 +336,12 @@ export const useNavStore = defineStore('nav', () => {
     
     // Actions - Settings
     updateApiKey,
+    updateAuthCredentials,
+    
+    // Actions - Authentication
+    login,
+    logout,
+    checkAuth,
     
     // Actions - Import/Export
     exportData,

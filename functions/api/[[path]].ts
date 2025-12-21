@@ -23,6 +23,8 @@ interface NavItem {
 
 interface AppSettings {
   apiKey: string;
+  authUsername?: string;
+  authPassword?: string;
 }
 
 interface AppData {
@@ -34,7 +36,7 @@ interface AppData {
 const DEFAULT_APP_DATA: AppData = {
   categories: [{ id: 'all', name: '全部', order: 0 }],
   navItems: [],
-  settings: { apiKey: '' },
+  settings: { apiKey: '', authUsername: 'admin', authPassword: 'admin123' },
 };
 
 // Cloudflare KV namespace interface

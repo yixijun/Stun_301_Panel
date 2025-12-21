@@ -25,6 +25,8 @@ export interface NavItem {
  */
 export interface AppSettings {
   apiKey: string;       // Webhook API 密钥
+  authUsername?: string; // 登录用户名
+  authPassword?: string; // 登录密码
 }
 
 /**
@@ -80,6 +82,8 @@ export const DEFAULT_APP_DATA: AppData = {
   ],
   navItems: [],
   settings: {
-    apiKey: ''
+    apiKey: '',
+    authUsername: 'admin',
+    authPassword: 'admin123'
   }
 };

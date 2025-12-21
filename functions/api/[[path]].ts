@@ -226,6 +226,26 @@ function handleHealth(): Response {
   return jsonResponse({ status: 'ok', timestamp: new Date().toISOString() });
 }
 
+// Handle GET /api/debug - Debug endpoint to check stored data
+async function handleDebug(storage: KVAdapter): Promise<Response> {
+  try {
+    const data = await storage.getData();
+    return jsonResponse({
+      success: true,
+      hasCategories: data.categories?.length || 0,
+      hasNavItems: data.navItems?.length || 0,
+      hasSettings: !!data.settings,
+      apiKeyConfigured: !!data.settings?.apiKey,
+      apiKeyLength: data.settings?.apiKey?.length || 0
+    });
+  } catch (e) {
+    return jsonResponse({
+      success: false,
+      error: String(e)
+    });
+  }
+}
+
 // Handle CORS preflight
 function handleOptions(): Response {
   return new Response(null, {
@@ -261,6 +281,12 @@ export async function onRequest(context: CFContext): Promise<Response> {
     case 'health':
       if (method === 'GET') {
         return handleHealth();
+      }
+      break;
+
+    case 'debug':
+      if (method === 'GET') {
+        return handleDebug(storage);
       }
       break;
 

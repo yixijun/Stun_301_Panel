@@ -188,4 +188,38 @@ function isIconUrl(icon?: string): boolean {
 .action-btn.danger:hover {
   color: var(--danger-color);
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .nav-card {
+    padding: 1rem;
+  }
+
+  .card-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .icon-image {
+    width: 28px;
+    height: 28px;
+  }
+
+  .icon-emoji {
+    font-size: 1.3rem;
+  }
+
+  .card-title {
+    font-size: 0.95rem;
+  }
+
+  .card-description {
+    font-size: 0.8rem;
+  }
+
+  .card-actions {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+}
 </style>

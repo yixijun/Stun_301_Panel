@@ -170,4 +170,23 @@ function closeEditModal() {
   border-radius: 8px;
   margin-top: 1rem;
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    padding: 1rem;
+    padding-top: 70px; /* Account for mobile header */
+  }
+
+  .content-header {
+    margin-bottom: 1rem;
+  }
+
+  .add-nav-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.8rem 1rem;
+  }
+}
 </style>

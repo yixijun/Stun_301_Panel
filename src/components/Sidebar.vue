@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useNavStore } from '../stores/navStore';
 import CategoryList from './CategoryList.vue';
 
 const store = useNavStore();
+const isMobileMenuOpen = ref(false);
 
 const emit = defineEmits<{
   (e: 'openSettings'): void;
@@ -18,12 +20,41 @@ function handleToggleEditMode() {
 function handleOpenSettings() {
   emit('openSettings');
 }
+
+function toggleMobileMenu() {
+  isMobileMenuOpen.value = !isMobileMenuOpen.value;
+}
+
+function closeMobileMenu() {
+  isMobileMenuOpen.value = false;
+}
 </script>
 
 <template>
-  <aside class="sidebar">
+  <!-- Mobile Header -->
+  <div class="mobile-header">
+    <button class="menu-btn" @click="toggleMobileMenu" aria-label="菜单">
+      <span>☰</span>
+    </button>
+    <h1 class="mobile-logo">Nav Portal</h1>
+    <button class="settings-btn-mobile icon-btn" @click="handleOpenSettings" aria-label="设置">
+      <span>⚙️</span>
+    </button>
+  </div>
+
+  <!-- Mobile Overlay -->
+  <div 
+    v-if="isMobileMenuOpen" 
+    class="mobile-overlay" 
+    @click="closeMobileMenu"
+  ></div>
+
+  <aside class="sidebar" :class="{ 'mobile-open': isMobileMenuOpen }">
     <div class="sidebar-header">
       <h1 class="logo">Nav Portal</h1>
+      <button class="close-btn icon-btn mobile-only" @click="closeMobileMenu" aria-label="关闭">
+        ✕
+      </button>
     </div>
     
     <div class="sidebar-content">
@@ -46,7 +77,7 @@ function handleOpenSettings() {
       </button>
       
       <button 
-        class="settings-btn icon-btn"
+        class="settings-btn icon-btn desktop-only"
         @click="handleOpenSettings"
         aria-label="设置"
       >
@@ -57,6 +88,55 @@ function handleOpenSettings() {
 </template>
 
 <style scoped>
+.mobile-header {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: var(--sidebar-bg);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 1rem;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 100;
+}
+
+.mobile-logo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin: 0;
+}
+
+.menu-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  padding: 0.5rem;
+  color: var(--text-primary);
+}
+
+.settings-btn-mobile {
+  font-size: 1.3rem;
+}
+
+.mobile-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 199;
+}
+
+.mobile-only {
+  display: none;
+}
+
 .sidebar {
   width: 260px;
   height: 100vh;
@@ -67,11 +147,15 @@ function handleOpenSettings() {
   position: fixed;
   left: 0;
   top: 0;
+  z-index: 200;
 }
 
 .sidebar-header {
   padding: 1.25rem 1rem;
   border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .logo {
@@ -79,6 +163,10 @@ function handleOpenSettings() {
   font-weight: 700;
   color: var(--primary-color);
   margin: 0;
+}
+
+.close-btn {
+  font-size: 1.2rem;
 }
 
 .sidebar-content {
@@ -129,5 +217,37 @@ function handleOpenSettings() {
 
 .icon {
   font-style: normal;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .mobile-header {
+    display: flex;
+  }
+
+  .mobile-overlay {
+    display: block;
+  }
+
+  .mobile-only {
+    display: block;
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-header {
+    padding: 1rem;
+  }
 }
 </style>

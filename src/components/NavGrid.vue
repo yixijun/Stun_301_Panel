@@ -75,4 +75,24 @@ function handleDelete(appid: string) {
   opacity: 0.7;
   margin: 0;
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .nav-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .empty-state {
+    padding: 2rem 1rem;
+  }
+
+  .empty-icon {
+    font-size: 2.5rem;
+  }
+
+  .empty-text {
+    font-size: 1rem;
+  }
+}
 </style>

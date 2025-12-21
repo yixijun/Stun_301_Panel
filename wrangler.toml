@@ -5,9 +5,6 @@ name = "nav-portal"
 compatibility_date = "2024-01-01"
 pages_build_output_dir = "dist"
 
-[build]
-command = "npm run build"
-
 # KV Namespace binding for data storage
 # You need to create a KV namespace in Cloudflare dashboard first:
 # 1. Go to Workers & Pages > KV

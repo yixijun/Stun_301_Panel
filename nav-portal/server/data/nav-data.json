@@ -1,0 +1,22 @@
+{
+  "categories": [
+    {
+      "id": "all",
+      "name": "全部",
+      "order": 0
+    }
+  ],
+  "navItems": [
+    {
+      "appid": "immich",
+      "name": "immich",
+      "description": "",
+      "link": "http://192.168.2.3:2283",
+      "categoryId": "all",
+      "order": 1
+    }
+  ],
+  "settings": {
+    "apiKey": "123"
+  }
+}

@@ -1,0 +1,30 @@
+# Cloudflare Pages Configuration
+# Requirements: 7.6, 7.7
+
+name = "nav-portal"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "dist"
+
+# KV Namespace binding for data storage
+# You need to create a KV namespace in Cloudflare dashboard first:
+# 1. Go to Workers & Pages > KV
+# 2. Create a namespace named "NAV_PORTAL_DATA"
+# 3. Copy the namespace ID and replace the placeholder below
+
+[[kv_namespaces]]
+binding = "NAV_PORTAL_DATA"
+id = "YOUR_KV_NAMESPACE_ID"
+# For local development with wrangler pages dev, use preview_id
+# preview_id = "YOUR_PREVIEW_KV_NAMESPACE_ID"
+
+# Environment variables (optional)
+# [vars]
+# ENVIRONMENT = "production"
+
+# Build configuration
+[build]
+command = "npm run build"
+
+# Development settings
+[dev]
+port = 8788

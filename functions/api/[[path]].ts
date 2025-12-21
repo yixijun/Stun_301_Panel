@@ -227,16 +227,26 @@ function handleHealth(): Response {
 }
 
 // Handle GET /api/debug - Debug endpoint to check stored data
-async function handleDebug(storage: KVAdapter): Promise<Response> {
+async function handleDebug(storage: KVAdapter, url: URL): Promise<Response> {
   try {
     const data = await storage.getData();
+    const inputKey = url.searchParams.get('key') || '';
+    const storedKey = data.settings?.apiKey || '';
+    
     return jsonResponse({
       success: true,
       hasCategories: data.categories?.length || 0,
       hasNavItems: data.navItems?.length || 0,
+      navItemAppIds: data.navItems?.map(item => item.appid) || [],
       hasSettings: !!data.settings,
-      apiKeyConfigured: !!data.settings?.apiKey,
-      apiKeyLength: data.settings?.apiKey?.length || 0
+      apiKeyConfigured: !!storedKey,
+      apiKeyLength: storedKey.length,
+      // Debug comparison (only show if key provided)
+      ...(inputKey ? {
+        inputKeyLength: inputKey.length,
+        keysMatch: inputKey === storedKey,
+        storedKeyPreview: storedKey.substring(0, 2) + '***'
+      } : {})
     });
   } catch (e) {
     return jsonResponse({
@@ -286,7 +296,7 @@ export async function onRequest(context: CFContext): Promise<Response> {
 
     case 'debug':
       if (method === 'GET') {
-        return handleDebug(storage);
+        return handleDebug(storage, url);
       }
       break;
 

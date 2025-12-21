@@ -20,11 +20,3 @@ id = "YOUR_KV_NAMESPACE_ID"
 # Environment variables (optional)
 # [vars]
 # ENVIRONMENT = "production"
-
-# Build configuration
-[build]
-command = "npm run build"
-
-# Development settings
-[dev]
-port = 8788

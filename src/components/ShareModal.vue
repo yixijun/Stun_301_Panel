@@ -16,6 +16,7 @@ const showCreateForm = ref(false);
 // Create form
 const selectedAppId = ref('');
 const extraParams = ref('');
+const paramType = ref<'path' | 'query'>('path'); // path = 追加到路径, query = 作为查询参数
 const expiresIn = ref(0); // 0 = permanent
 
 const navItemOptions = computed(() => store.navItems);
@@ -36,15 +37,23 @@ async function createShareLink() {
   
   isLoading.value = true;
   try {
+    // 根据参数类型构建参数字符串
+    let params = extraParams.value || undefined;
+    if (params && paramType.value === 'path') {
+      // 标记为路径类型参数
+      params = `__path__:${params}`;
+    }
+    
     await apiClient.createShareLink(
       selectedAppId.value,
-      extraParams.value || undefined,
+      params,
       expiresIn.value || undefined
     );
     await loadShareLinks();
     showCreateForm.value = false;
     selectedAppId.value = '';
     extraParams.value = '';
+    paramType.value = 'path';
     expiresIn.value = 0;
   } catch (e) {
     console.error('Failed to create share link:', e);
@@ -127,8 +136,18 @@ onMounted(loadShareLinks);
               <input 
                 v-model="extraParams" 
                 type="text" 
-                placeholder="例如: token=xxx&ref=share"
+                placeholder="例如: share/abc123 或 token=xxx"
               />
+              <div class="param-type-selector">
+                <label>
+                  <input type="radio" v-model="paramType" value="path" />
+                  追加到路径 (如 /share/abc)
+                </label>
+                <label>
+                  <input type="radio" v-model="paramType" value="query" />
+                  作为查询参数 (如 ?token=xxx)
+                </label>
+              </div>
             </div>
 
             <div class="form-group">
@@ -174,7 +193,10 @@ onMounted(loadShareLinks);
                 <button class="copy-btn" @click="copyToClipboard(getShareUrl(link.id))">复制</button>
               </div>
               <div class="share-meta">
-                <span v-if="link.params" class="params">参数: {{ link.params }}</span>
+                <span v-if="link.params" class="params">
+                  参数: {{ link.params.startsWith('__path__:') ? link.params.substring(9) : link.params }}
+                  ({{ link.params.startsWith('__path__:') ? '路径' : '查询' }})
+                </span>
                 <span v-if="link.permanent" class="permanent">永久有效</span>
                 <span v-else-if="link.expired" class="expired-tag">已过期</span>
                 <span v-else class="expires">过期: {{ formatDate(link.expiresAt!) }}</span>
@@ -268,6 +290,26 @@ onMounted(loadShareLinks);
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
+}
+
+.param-type-selector {
+  margin-top: 8px;
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: #666;
+}
+
+.param-type-selector label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.param-type-selector input[type="radio"] {
+  width: auto;
+  margin: 0;
 }
 
 .form-actions {

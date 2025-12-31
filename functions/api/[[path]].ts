@@ -264,8 +264,16 @@ async function handleGo(storage: KVAdapter, shareId: string): Promise<Response> 
     // Build redirect URL with params
     let targetUrl = navItem.link;
     if (shareLink.params) {
-      const separator = targetUrl.includes('?') ? '&' : '?';
-      targetUrl = targetUrl + separator + shareLink.params;
+      // Check if it's a path-type param (prefixed with __path__:)
+      if (shareLink.params.startsWith('__path__:')) {
+        const pathParam = shareLink.params.substring(9); // Remove __path__: prefix
+        // Ensure URL ends without slash, then add path
+        targetUrl = targetUrl.replace(/\/+$/, '') + '/' + pathParam.replace(/^\/+/, '');
+      } else {
+        // Query parameter style
+        const separator = targetUrl.includes('?') ? '&' : '?';
+        targetUrl = targetUrl + separator + shareLink.params;
+      }
     }
     
     return Response.redirect(targetUrl, 302);

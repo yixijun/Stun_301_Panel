@@ -93,11 +93,12 @@ function closeShareModal() {
     />
     
     <main class="main-content">
-      <div class="content-header" v-if="store.isEditMode">
+      <!-- Share button always visible -->
+      <div class="content-header">
         <button class="share-btn" @click="openShareModal">
           <span>🔗</span> 分享链接
         </button>
-        <button class="add-nav-btn" @click="openAddNavItem">
+        <button v-if="store.isEditMode" class="add-nav-btn" @click="openAddNavItem">
           <span>➕</span> 添加导航项
         </button>
       </div>

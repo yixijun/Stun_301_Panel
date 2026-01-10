@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useNavStore } from '../stores/navStore';
 import { apiClient } from '../api/client';
-import type { ShareLinkDisplay, AccessLog } from '../types';
+import type { ShareLinkDisplay } from '../types';
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -10,10 +10,8 @@ const emit = defineEmits<{
 
 const store = useNavStore();
 const shareLinks = ref<ShareLinkDisplay[]>([]);
-const accessLogs = ref<AccessLog[]>([]);
 const isLoading = ref(false);
 const showCreateForm = ref(false);
-const activeTab = ref<'links' | 'logs'>('links');
 const copiedId = ref<string | null>(null);
 
 // Create form
@@ -30,17 +28,6 @@ async function loadShareLinks() {
     shareLinks.value = await apiClient.listShareLinks();
   } catch (e) {
     console.error('Failed to load share links:', e);
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-async function loadAccessLogs() {
-  isLoading.value = true;
-  try {
-    accessLogs.value = await apiClient.getAccessLogs();
-  } catch (e) {
-    console.error('Failed to load access logs:', e);
   } finally {
     isLoading.value = false;
   }
@@ -88,20 +75,6 @@ async function deleteShareLink(id: string) {
   }
 }
 
-async function clearLogs() {
-  if (!confirm('确定清空所有访问日志？')) return;
-  
-  isLoading.value = true;
-  try {
-    await apiClient.clearAccessLogs();
-    await loadAccessLogs();
-  } catch (e) {
-    console.error('Failed to clear logs:', e);
-  } finally {
-    isLoading.value = false;
-  }
-}
-
 function getShareUrl(id: string): string {
   return `${window.location.origin}/api/go/${id}`;
 }
@@ -133,13 +106,6 @@ function getNavItemName(appid: string): string {
   return item?.name || appid;
 }
 
-function switchTab(tab: 'links' | 'logs') {
-  activeTab.value = tab;
-  if (tab === 'logs') {
-    loadAccessLogs();
-  }
-}
-
 onMounted(loadShareLinks);
 </script>
 
@@ -153,29 +119,9 @@ onMounted(loadShareLinks);
         </button>
       </div>
 
-      <!-- Tabs -->
-      <div class="tabs">
-        <button 
-          class="tab-btn" 
-          :class="{ active: activeTab === 'links' }"
-          @click="switchTab('links')"
-        >
-          <span class="tab-icon">🔗</span>
-          分享链接
-        </button>
-        <button 
-          class="tab-btn" 
-          :class="{ active: activeTab === 'logs' }"
-          @click="switchTab('logs')"
-        >
-          <span class="tab-icon">📊</span>
-          访问日志
-        </button>
-      </div>
-
       <div class="modal-body">
-        <!-- Links Tab -->
-        <div v-if="activeTab === 'links'" class="tab-content">
+        <!-- Share links content -->
+        <div class="tab-content">
           <!-- Create button -->
           <div class="create-section">
             <button 
@@ -314,61 +260,6 @@ onMounted(loadShareLinks);
             </div>
           </div>
         </div>
-
-        <!-- Logs Tab -->
-        <div v-if="activeTab === 'logs'" class="tab-content">
-          <div class="logs-header">
-            <h3>访问记录</h3>
-            <button 
-              v-if="accessLogs.length > 0" 
-              class="clear-btn"
-              @click="clearLogs"
-            >
-              <span>🗑️</span> 清空日志
-            </button>
-          </div>
-          
-          <div class="logs-list">
-            <div v-if="isLoading && accessLogs.length === 0" class="loading-state">
-              <div class="spinner"></div>
-              <span>加载中...</span>
-            </div>
-            <div v-else-if="accessLogs.length === 0" class="empty-state">
-              <span class="empty-icon">📊</span>
-              <p>暂无访问记录</p>
-              <p class="empty-hint">当有人访问分享链接时，记录会显示在这里</p>
-            </div>
-            <div 
-              v-else 
-              v-for="log in accessLogs" 
-              :key="log.id" 
-              class="log-card"
-            >
-              <div class="log-header">
-                <span class="log-target">{{ getNavItemName(log.appid) }}</span>
-                <span class="log-time">{{ formatRelativeTime(log.timestamp) }}</span>
-              </div>
-              <div class="log-details">
-                <div class="log-item">
-                  <span class="log-label">🌐 IP</span>
-                  <span class="log-value">{{ log.ip || '未知' }}</span>
-                </div>
-                <div class="log-item">
-                  <span class="log-label">📍 地区</span>
-                  <span class="log-value">{{ log.country || '未知' }} {{ log.city || '' }}</span>
-                </div>
-                <div class="log-item">
-                  <span class="log-label">🔗 链接ID</span>
-                  <span class="log-value">{{ log.shareId }}</span>
-                </div>
-              </div>
-              <div v-if="log.userAgent" class="log-ua">
-                <span class="log-label">🖥️ 设备</span>
-                <span class="log-value ua-text">{{ log.userAgent }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -376,7 +267,7 @@ onMounted(loadShareLinks);
 
 <style scoped>
 .share-modal {
-  background: rgba(255, 255, 255, 0.98);
+  background: var(--modal-bg);
   backdrop-filter: blur(20px);
   border-radius: var(--radius-xl);
   width: 95%;
@@ -386,7 +277,7 @@ onMounted(loadShareLinks);
   display: flex;
   flex-direction: column;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), var(--shadow-glow);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--border-color);
   animation: modalSlideUp 0.3s ease;
 }
 
@@ -406,7 +297,7 @@ onMounted(loadShareLinks);
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 1.75rem;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  background: linear-gradient(135deg, var(--primary-light) 0%, rgba(139, 92, 246, 0.05) 100%);
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -537,7 +428,7 @@ onMounted(loadShareLinks);
 }
 
 .create-form {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(139, 92, 246, 0.03) 100%);
+  background: linear-gradient(135deg, var(--primary-light) 0%, rgba(139, 92, 246, 0.03) 100%);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
@@ -592,7 +483,8 @@ onMounted(loadShareLinks);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-md);
   font-size: 0.95rem;
-  background: white;
+  background: var(--input-bg);
+  color: var(--text-primary);
   transition: all var(--transition-fast);
 }
 
@@ -600,6 +492,7 @@ onMounted(loadShareLinks);
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 4px var(--primary-light);
+  background: var(--input-focus-bg);
 }
 
 .param-type-selector {
@@ -661,7 +554,7 @@ onMounted(loadShareLinks);
 }
 
 .btn-secondary {
-  background: white;
+  background: var(--glass-bg);
   color: var(--text-primary);
   border: 2px solid var(--border-color);
 }
@@ -719,7 +612,7 @@ onMounted(loadShareLinks);
 }
 
 .share-card {
-  background: white;
+  background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: 1.25rem;
@@ -734,7 +627,7 @@ onMounted(loadShareLinks);
 
 .share-card.expired {
   opacity: 0.6;
-  background: rgba(248, 250, 252, 0.5);
+  background: var(--glass-bg);
 }
 
 .card-header {
@@ -789,7 +682,7 @@ onMounted(loadShareLinks);
   align-items: center;
   gap: 0.75rem;
   margin-bottom: 0.75rem;
-  background: rgba(248, 250, 252, 0.8);
+  background: var(--glass-bg);
   border-radius: var(--radius-md);
   padding: 0.5rem 0.75rem;
 }

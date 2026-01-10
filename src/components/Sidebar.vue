@@ -15,8 +15,8 @@ const emit = defineEmits<{
 }>();
 
 onMounted(() => {
-  const saved = localStorage.getItem('theme') as 'light' | 'dark' | 'system' | null;
-  if (saved) {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light' || saved === 'dark' || saved === 'system') {
     currentTheme.value = saved;
     applyTheme(saved);
   }

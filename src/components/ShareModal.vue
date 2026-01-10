@@ -615,14 +615,33 @@ onMounted(loadShareLinks);
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: 1.25rem;
+  padding: 1.5rem;
   transition: all var(--transition-normal);
   position: relative;
+  overflow: hidden;
+}
+
+.share-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--transition-normal);
 }
 
 .share-card:hover {
   border-color: var(--primary-color);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-hover), var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+.share-card:hover::before {
+  transform: scaleX(1);
 }
 
 .share-card.expired {
@@ -630,24 +649,40 @@ onMounted(loadShareLinks);
   background: var(--glass-bg);
 }
 
+.share-card.expired::before {
+  background: linear-gradient(90deg, var(--danger-color), #f87171);
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .card-title {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
   font-weight: 700;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   color: var(--text-primary);
+  transition: color var(--transition-fast);
+}
+
+.share-card:hover .card-title {
+  color: var(--primary-color);
 }
 
 .nav-icon {
-  font-size: 1.1rem;
+  font-size: 1.25rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary-light) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border-radius: var(--radius-sm);
 }
 
 .card-badges {
@@ -656,35 +691,47 @@ onMounted(loadShareLinks);
 }
 
 .badge {
-  padding: 0.25rem 0.75rem;
+  padding: 0.35rem 0.85rem;
   border-radius: 20px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .badge-success {
-  background: rgba(34, 197, 94, 0.1);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%);
   color: #16a34a;
+  border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
 .badge-danger {
-  background: rgba(239, 68, 68, 0.1);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%);
   color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .badge-warning {
-  background: rgba(245, 158, 11, 0.1);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%);
   color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
 .card-url {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 0.75rem;
-  background: var(--glass-bg);
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, var(--glass-bg) 0%, rgba(99, 102, 241, 0.03) 100%);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem 1rem;
+  transition: all var(--transition-fast);
+}
+
+.share-card:hover .card-url {
+  border-color: var(--primary-color);
+  background: linear-gradient(135deg, var(--primary-light) 0%, rgba(139, 92, 246, 0.05) 100%);
 }
 
 .card-url code {
@@ -694,42 +741,54 @@ onMounted(loadShareLinks);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: 'SF Mono', Monaco, monospace;
+  font-family: 'SF Mono', Monaco, 'Consolas', monospace;
 }
 
 .copy-btn {
-  padding: 0.4rem 0.75rem;
-  background: var(--primary-color);
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
   color: white;
   border: none;
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all var(--transition-fast);
   white-space: nowrap;
 }
 
 .copy-btn:hover {
-  background: var(--primary-hover);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .copy-btn.copied {
-  background: var(--success-color);
+  background: linear-gradient(135deg, var(--success-color) 0%, #16a34a 100%);
 }
 
 .card-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 1rem;
   font-size: 0.85rem;
   color: var(--text-secondary);
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border-color);
 }
 
 .meta-item {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--glass-bg);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.meta-item:hover {
+  background: var(--primary-light);
+  color: var(--primary-color);
 }
 
 .meta-icon {
@@ -738,12 +797,12 @@ onMounted(loadShareLinks);
 
 .delete-btn {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  padding: 0.4rem 0.75rem;
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--danger-color);
-  border: none;
+  top: 1.25rem;
+  right: 1.25rem;
+  padding: 0.5rem 0.85rem;
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
   font-weight: 600;
@@ -753,15 +812,19 @@ onMounted(loadShareLinks);
   align-items: center;
   gap: 0.35rem;
   opacity: 0;
+  transform: translateX(10px);
 }
 
 .share-card:hover .delete-btn {
   opacity: 1;
+  transform: translateX(0);
 }
 
 .delete-btn:hover {
   background: var(--danger-color);
   color: white;
+  border-color: var(--danger-color);
+  transform: scale(1.05);
 }
 
 /* Logs Tab */

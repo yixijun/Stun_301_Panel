@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { useNavStore } from '../stores/navStore';
+import type { NavItem } from '../types';
 import NavCard from './NavCard.vue';
+import ServiceCard from './ServiceCard.vue';
+import McServerCard from './McServerCard.vue';
 
 const store = useNavStore();
 
@@ -16,6 +19,18 @@ function handleEdit(appid: string) {
 function handleDelete(appid: string) {
   emit('deleteItem', appid);
 }
+
+function getCardComponent(item: NavItem) {
+  switch (item.type) {
+    case 'service':
+      return ServiceCard;
+    case 'mc-java':
+    case 'mc-pe':
+      return McServerCard;
+    default:
+      return NavCard;
+  }
+}
 </script>
 
 <template>
@@ -27,9 +42,10 @@ function handleDelete(appid: string) {
     </div>
     
     <div v-else class="nav-grid">
-      <NavCard
+      <component
         v-for="item in store.filteredNavItems"
         :key="item.appid"
+        :is="getCardComponent(item)"
         :item="item"
         @edit="handleEdit"
         @delete="handleDelete"

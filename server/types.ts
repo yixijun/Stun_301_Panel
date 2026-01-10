@@ -9,6 +9,44 @@ export interface Category {
   order: number;
 }
 
+/**
+ * NavItemType - 导航项类型
+ */
+export type NavItemType = 'web' | 'service' | 'mc-java' | 'mc-pe';
+
+/**
+ * ServiceInfo - 服务信息（用于 service 类型）
+ */
+export interface ServiceInfo {
+  status?: 'online' | 'offline' | 'unknown';
+  description?: string;
+  features?: string[];
+  contact?: string;
+}
+
+/**
+ * McServerInfo - MC 服务器信息
+ */
+export interface McServerInfo {
+  host: string;
+  port: number;
+}
+
+/**
+ * McServerStatus - MC 服务器状态响应
+ */
+export interface McServerStatus {
+  online: boolean;
+  version?: string;
+  players?: {
+    online: number;
+    max: number;
+    list?: string[];
+  };
+  motd?: string;
+  icon?: string;
+}
+
 export interface NavItem {
   appid: string;
   name: string;
@@ -17,10 +55,15 @@ export interface NavItem {
   icon?: string;
   categoryId: string;
   order: number;
+  type?: NavItemType;
+  serviceInfo?: ServiceInfo;
+  mcServer?: McServerInfo;
 }
 
 export interface AppSettings {
   apiKey: string;
+  authUsername?: string;
+  authPassword?: string;
 }
 
 export interface AppData {

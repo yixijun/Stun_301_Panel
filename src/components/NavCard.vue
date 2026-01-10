@@ -31,9 +31,7 @@ function handleDelete(event: Event) {
 
 function getIconDisplay(icon?: string): string {
   if (!icon) return '🔗';
-  // If it's an emoji or short text, return as is
   if (icon.length <= 2) return icon;
-  // If it's a URL, we'll handle it in template
   return icon;
 }
 
@@ -216,6 +214,8 @@ function isIconUrl(icon?: string): boolean {
   opacity: 0.9;
   transition: all var(--transition-fast);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: none;
+  cursor: pointer;
 }
 
 .action-btn:hover {
@@ -229,7 +229,6 @@ function isIconUrl(icon?: string): boolean {
   background: rgba(239, 68, 68, 0.1);
 }
 
-/* Mobile Responsive */
 @media (max-width: 768px) {
   .nav-card {
     padding: 1.25rem;

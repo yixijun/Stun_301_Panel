@@ -8,6 +8,44 @@ export interface Category {
 }
 
 /**
+ * NavItemType - 导航项类型
+ */
+export type NavItemType = 'web' | 'service' | 'mc-java' | 'mc-pe';
+
+/**
+ * ServiceInfo - 服务信息（用于 service 类型）
+ */
+export interface ServiceInfo {
+  status?: 'online' | 'offline' | 'unknown';
+  description?: string;
+  features?: string[];
+  contact?: string;
+}
+
+/**
+ * McServerInfo - MC 服务器信息
+ */
+export interface McServerInfo {
+  host: string;
+  port: number;
+}
+
+/**
+ * McServerStatus - MC 服务器状态响应
+ */
+export interface McServerStatus {
+  online: boolean;
+  version?: string;
+  players?: {
+    online: number;
+    max: number;
+    list?: string[];
+  };
+  motd?: string;
+  icon?: string;
+}
+
+/**
  * NavItem - 导航项
  */
 export interface NavItem {
@@ -18,6 +56,9 @@ export interface NavItem {
   icon?: string;        // 图标 URL 或 emoji
   categoryId: string;   // 所属分类 ID
   order: number;        // 排序
+  type?: NavItemType;   // 导航项类型，默认 web
+  serviceInfo?: ServiceInfo;  // 服务信息（type=service 时使用）
+  mcServer?: McServerInfo;    // MC 服务器信息（type=mc-java/mc-pe 时使用）
 }
 
 /**

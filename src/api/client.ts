@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AppData, ShareLinkDisplay } from '../types';
+import type { AppData, ShareLinkDisplay, AccessLog, McServerStatus } from '../types';
 import { DEFAULT_APP_DATA } from '../types';
 
 const API_BASE_URL = '/api';
@@ -30,6 +30,16 @@ interface CreateShareResponse {
 interface ListSharesResponse {
   success: boolean;
   shareLinks: ShareLinkDisplay[];
+}
+
+interface AccessLogsResponse {
+  success: boolean;
+  accessLogs: AccessLog[];
+}
+
+interface McStatusResponse {
+  success: boolean;
+  status: McServerStatus;
 }
 
 export const apiClient = {
@@ -101,6 +111,39 @@ export const apiClient = {
    */
   async deleteShareLink(id: string): Promise<void> {
     await axiosInstance.delete(`/share/${id}`);
+  },
+
+  /**
+   * Get access logs
+   */
+  async getAccessLogs(): Promise<AccessLog[]> {
+    const response = await axiosInstance.get<AccessLogsResponse>('/logs');
+    return response.data.accessLogs;
+  },
+
+  /**
+   * Clear all access logs
+   */
+  async clearAccessLogs(): Promise<void> {
+    await axiosInstance.delete('/logs');
+  },
+
+  /**
+   * Get MC server status
+   */
+  async getMcServerStatus(host: string, port: number, type: 'java' | 'bedrock'): Promise<McServerStatus> {
+    try {
+      const response = await axiosInstance.get<McStatusResponse>('/mc-status', {
+        params: { host, port, type }
+      });
+      if (response.data.success) {
+        return response.data.status;
+      }
+      return { online: false };
+    } catch (error) {
+      console.error('Failed to fetch MC server status:', error);
+      return { online: false };
+    }
   }
 };
 

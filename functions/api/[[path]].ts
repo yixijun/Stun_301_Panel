@@ -29,6 +29,17 @@ interface ShareLink {
   createdAt: number;
 }
 
+interface AccessLog {
+  id: string;
+  shareId: string;
+  appid: string;
+  ip?: string;
+  country?: string;
+  city?: string;
+  userAgent?: string;
+  timestamp: number;
+}
+
 interface AppSettings {
   apiKey: string;
   authUsername?: string;
@@ -40,6 +51,7 @@ interface AppData {
   navItems: NavItem[];
   settings: AppSettings;
   shareLinks?: ShareLink[];
+  accessLogs?: AccessLog[];
 }
 
 const DEFAULT_APP_DATA: AppData = {
@@ -47,6 +59,7 @@ const DEFAULT_APP_DATA: AppData = {
   navItems: [],
   settings: { apiKey: '', authUsername: 'admin', authPassword: 'admin123' },
   shareLinks: [],
+  accessLogs: [],
 };
 
 // Cloudflare KV namespace interface
@@ -239,7 +252,7 @@ function handleHealth(): Response {
 }
 
 // Handle GET /api/go/:id - Redirect to target link
-async function handleGo(storage: KVAdapter, shareId: string): Promise<Response> {
+async function handleGo(storage: KVAdapter, shareId: string, request: Request): Promise<Response> {
   try {
     const data = await storage.getData();
     const shareLinks = data.shareLinks || [];
@@ -261,6 +274,28 @@ async function handleGo(storage: KVAdapter, shareId: string): Promise<Response> 
       return new Response('Target not found', { status: 404 });
     }
     
+    // Record access log
+    const accessLog: AccessLog = {
+      id: generateShareId() + Date.now().toString(36),
+      shareId: shareId,
+      appid: shareLink.appid,
+      ip: request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || undefined,
+      country: request.headers.get('cf-ipcountry') || undefined,
+      city: request.headers.get('cf-ipcity') || undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+      timestamp: Date.now(),
+    };
+    
+    if (!data.accessLogs) {
+      data.accessLogs = [];
+    }
+    // Keep only last 100 logs
+    data.accessLogs.unshift(accessLog);
+    if (data.accessLogs.length > 100) {
+      data.accessLogs = data.accessLogs.slice(0, 100);
+    }
+    await storage.saveData(data);
+    
     // Build redirect URL with params
     let targetUrl = navItem.link;
     if (shareLink.params) {
@@ -279,6 +314,29 @@ async function handleGo(storage: KVAdapter, shareId: string): Promise<Response> 
     return Response.redirect(targetUrl, 302);
   } catch {
     return new Response('Internal server error', { status: 500 });
+  }
+}
+
+// Handle GET /api/logs - Get access logs
+async function handleGetLogs(storage: KVAdapter): Promise<Response> {
+  try {
+    const data = await storage.getData();
+    const accessLogs = data.accessLogs || [];
+    return jsonResponse({ success: true, accessLogs });
+  } catch {
+    return errorResponse('Internal server error', 500);
+  }
+}
+
+// Handle DELETE /api/logs - Clear access logs
+async function handleClearLogs(storage: KVAdapter): Promise<Response> {
+  try {
+    const data = await storage.getData();
+    data.accessLogs = [];
+    await storage.saveData(data);
+    return jsonResponse({ success: true, message: 'Access logs cleared' });
+  } catch {
+    return errorResponse('Internal server error', 500);
   }
 }
 
@@ -485,6 +543,15 @@ export async function onRequest(context: CFContext): Promise<Response> {
     case 'shares':
       if (method === 'GET') {
         return handleListShares(storage);
+      }
+      break;
+
+    case 'logs':
+      if (method === 'GET') {
+        return handleGetLogs(storage);
+      }
+      if (method === 'DELETE') {
+        return handleClearLogs(storage);
       }
       break;
   }

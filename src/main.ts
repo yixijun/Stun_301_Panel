@@ -12,6 +12,16 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: () => import('./views/Home.vue')
+    },
+    {
+      path: '/service/:appid',
+      name: 'service-detail',
+      component: () => import('./views/ServiceDetail.vue')
+    },
+    {
+      path: '/share/:appid',
+      name: 'share-view',
+      component: () => import('./views/ShareView.vue')
     }
   ]
 })

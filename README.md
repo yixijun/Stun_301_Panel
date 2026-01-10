@@ -6,6 +6,12 @@
 
 - 分类管理：支持添加、编辑、删除导航分类
 - 导航项管理：支持添加、编辑、删除导航链接
+- 多类型导航项：
+  - **Web 链接**：普通网页链接，点击直接跳转
+  - **服务面板**：以卡片形式展示服务信息（状态、功能特性、联系方式等）
+  - **Minecraft Java版**：显示服务器地址、版本、在线人数和玩家列表
+  - **Minecraft 基岩版**：同上，支持基岩版服务器
+- 分享链接：为 Web 类型导航项创建分享链接，支持设置有效期
 - Webhook API：通过 API 动态更新导航链接
 - 数据导入导出：支持 JSON 格式的数据备份和恢复
 - 多环境部署：支持本地 Node.js 和 Cloudflare Pages 部署
@@ -104,6 +110,20 @@ npm run pages:deploy
 - `key`: API 密钥
 - `appid`: 导航项 ID
 - `link`: 新链接
+
+### GET /api/mc-status
+查询 Minecraft 服务器状态
+
+参数：
+- `host`: 服务器地址
+- `port`: 服务器端口
+- `type`: 服务器类型（`java` 或 `bedrock`）
+
+返回：
+- `online`: 是否在线
+- `version`: 游戏版本
+- `players`: 在线人数信息
+- `motd`: 服务器公告
 
 ### GET /api/health
 健康检查端点

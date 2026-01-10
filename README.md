@@ -125,6 +125,45 @@ npm run pages:deploy
 - `players`: 在线人数信息
 - `motd`: 服务器公告
 
+### POST /api/webhook/mc
+更新 MC 服务器地址（需要 API 密钥）
+
+参数：
+- `key`: API 密钥
+- `appid`: 导航项 ID
+- `host`: 新的服务器地址
+- `port`: 新的端口（可选）
+
+示例：
+```bash
+# 更新 MC 服务器地址
+curl -X POST "https://your-domain.com/api/webhook/mc?key=YOUR_API_KEY&appid=my-mc-server&host=mc.example.com&port=25565"
+```
+
+### GET /api/webhook/mc
+获取 MC 服务器配置信息（需要 API 密钥）
+
+参数：
+- `key`: API 密钥
+- `appid`: 导航项 ID
+
+### POST /api/webhook/service
+更新服务状态信息（需要 API 密钥）
+
+参数：
+- `key`: API 密钥
+- `appid`: 导航项 ID
+- `status`: 服务状态（`online`/`offline`/`unknown`）
+- `description`: 详细描述（可选）
+- `contact`: 联系方式（可选）
+- `link`: 服务链接（可选）
+
+示例：
+```bash
+# 更新服务状态
+curl -X POST "https://your-domain.com/api/webhook/service?key=YOUR_API_KEY&appid=my-service&status=online"
+```
+
 ### GET /api/health
 健康检查端点
 

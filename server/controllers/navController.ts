@@ -5,7 +5,7 @@
 
 import { Request, Response } from 'express';
 import { StorageAdapter } from '../storage/adapter.js';
-import { AppData } from '../types.js';
+import { AppData, NavItem } from '../types.js';
 
 export class NavController {
   private storage: StorageAdapter;
@@ -137,6 +137,172 @@ export class NavController {
       }
 
       res.json({ success: true, message: 'Link updated' });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+        code: 500
+      });
+    }
+  }
+
+  /**
+   * POST /api/webhook/service - Update service info
+   * Webhook for service type navigation items
+   */
+  async updateService(req: Request, res: Response): Promise<void> {
+    try {
+      const appid = req.query.appid as string;
+
+      if (!appid) {
+        res.status(400).json({
+          success: false,
+          error: 'Missing required parameter: appid',
+          code: 400
+        });
+        return;
+      }
+
+      const data = await this.storage.getData();
+      const itemIndex = data.navItems.findIndex(item => item.appid === appid);
+
+      if (itemIndex === -1) {
+        res.status(404).json({
+          success: false,
+          error: 'AppID not found',
+          code: 404
+        });
+        return;
+      }
+
+      const item = data.navItems[itemIndex];
+      if (item.type !== 'service') {
+        res.status(400).json({
+          success: false,
+          error: 'NavItem is not a service type',
+          code: 400
+        });
+        return;
+      }
+
+      // Update service info from query params or body
+      const status = (req.query.status || req.body?.status) as 'online' | 'offline' | 'unknown';
+      const description = (req.query.description || req.body?.description) as string;
+      const features = req.body?.features as string[];
+      const contact = (req.query.contact || req.body?.contact) as string;
+      const link = (req.query.link || req.body?.link) as string;
+
+      if (!item.serviceInfo) {
+        item.serviceInfo = {};
+      }
+
+      if (status) item.serviceInfo.status = status;
+      if (description) item.serviceInfo.description = description;
+      if (features) item.serviceInfo.features = features;
+      if (contact) item.serviceInfo.contact = contact;
+      if (link) item.link = link;
+
+      await this.storage.saveData(data);
+      res.json({ success: true, message: 'Service info updated' });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+        code: 500
+      });
+    }
+  }
+
+  /**
+   * POST /api/webhook/mc - Update MC server info
+   * Webhook for mc-java and mc-pe type navigation items
+   */
+  async updateMcServer(req: Request, res: Response): Promise<void> {
+    try {
+      const appid = req.query.appid as string;
+
+      if (!appid) {
+        res.status(400).json({
+          success: false,
+          error: 'Missing required parameter: appid',
+          code: 400
+        });
+        return;
+      }
+
+      const data = await this.storage.getData();
+      const itemIndex = data.navItems.findIndex(item => item.appid === appid);
+
+      if (itemIndex === -1) {
+        res.status(404).json({
+          success: false,
+          error: 'AppID not found',
+          code: 404
+        });
+        return;
+      }
+
+      const item = data.navItems[itemIndex];
+      if (item.type !== 'mc-java' && item.type !== 'mc-pe') {
+        res.status(400).json({
+          success: false,
+          error: 'NavItem is not a MC server type',
+          code: 400
+        });
+        return;
+      }
+
+      // Update MC server info from query params or body
+      const host = (req.query.host || req.body?.host) as string;
+      const port = req.query.port || req.body?.port;
+
+      if (!item.mcServer) {
+        item.mcServer = { host: '', port: item.type === 'mc-java' ? 25565 : 19132 };
+      }
+
+      if (host) item.mcServer.host = host;
+      if (port) item.mcServer.port = parseInt(port as string, 10);
+
+      await this.storage.saveData(data);
+      res.json({ success: true, message: 'MC server info updated' });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+        code: 500
+      });
+    }
+  }
+
+  /**
+   * GET /api/webhook/item - Get full navigation item info
+   * Returns complete item data including type-specific info
+   */
+  async getItem(req: Request, res: Response): Promise<void> {
+    try {
+      const appid = req.query.appid as string;
+
+      if (!appid) {
+        res.status(400).json({
+          success: false,
+          error: 'Missing required parameter: appid',
+          code: 400
+        });
+        return;
+      }
+
+      const navItem = await this.storage.getNavItem(appid);
+
+      if (!navItem) {
+        res.status(404).json({
+          success: false,
+          error: 'AppID not found',
+          code: 404
+        });
+        return;
+      }
+
+      res.json({ success: true, item: navItem });
     } catch (error) {
       res.status(500).json({
         success: false,

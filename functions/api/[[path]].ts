@@ -19,6 +19,17 @@ interface NavItem {
   icon?: string;
   categoryId: string;
   order: number;
+  type?: 'web' | 'service' | 'mc-java' | 'mc-pe';
+  serviceInfo?: {
+    status?: 'online' | 'offline' | 'unknown';
+    description?: string;
+    features?: string[];
+    contact?: string;
+  };
+  mcServer?: {
+    host: string;
+    port: number;
+  };
 }
 
 interface ShareLink {

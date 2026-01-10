@@ -39,7 +39,7 @@ function getIconDisplay(icon?: string): string {
 
 function isIconUrl(icon?: string): boolean {
   if (!icon) return false;
-  return icon.startsWith('http://') || icon.startsWith('https://') || icon.startsWith('/');
+  return /^(https?:\/\/|\/)/.test(icon);
 }
 </script>
 
@@ -89,21 +89,42 @@ function isIconUrl(icon?: string): boolean {
 
 <style scoped>
 .nav-card {
-  background: var(--card-bg);
-  border-radius: 12px;
-  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
   display: flex;
   align-items: flex-start;
   gap: 1rem;
   box-shadow: var(--shadow);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
   position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  overflow: hidden;
+}
+
+.nav-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--transition-normal);
 }
 
 .nav-card:hover {
-  box-shadow: var(--shadow-hover);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover), var(--shadow-glow);
+  transform: translateY(-4px);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+.nav-card:hover::before {
+  transform: scaleX(1);
 }
 
 .nav-card.edit-mode {
@@ -114,15 +135,25 @@ function isIconUrl(icon?: string): boolean {
   transform: none;
 }
 
+.nav-card.edit-mode:hover::before {
+  transform: scaleX(0);
+}
+
 .card-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
-  background: var(--bg-color);
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--primary-light) 0%, rgba(139, 92, 246, 0.1) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: all var(--transition-normal);
+}
+
+.nav-card:hover .card-icon {
+  transform: scale(1.05);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
 }
 
 .icon-image {
@@ -133,7 +164,7 @@ function isIconUrl(icon?: string): boolean {
 }
 
 .icon-emoji {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
 }
 
 .card-content {
@@ -142,30 +173,36 @@ function isIconUrl(icon?: string): boolean {
 }
 
 .card-title {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.05rem;
+  font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 0.25rem 0;
+  margin: 0 0 0.35rem 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color var(--transition-fast);
+}
+
+.nav-card:hover .card-title {
+  color: var(--primary-color);
 }
 
 .card-description {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: var(--text-secondary);
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .card-actions {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.35rem;
   position: absolute;
   top: 0.75rem;
   right: 0.75rem;
@@ -173,31 +210,34 @@ function isIconUrl(icon?: string): boolean {
 
 .action-btn {
   font-size: 0.9rem;
-  padding: 0.3rem;
-  background: var(--bg-color);
-  border-radius: 6px;
-  opacity: 0.8;
-  transition: all 0.15s ease;
+  padding: 0.4rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-sm);
+  opacity: 0.9;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .action-btn:hover {
   opacity: 1;
-  background: var(--border-color);
+  transform: scale(1.1);
+  background: white;
 }
 
 .action-btn.danger:hover {
   color: var(--danger-color);
+  background: rgba(239, 68, 68, 0.1);
 }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .nav-card {
-    padding: 1rem;
+    padding: 1.25rem;
   }
 
   .card-icon {
-    width: 42px;
-    height: 42px;
+    width: 46px;
+    height: 46px;
   }
 
   .icon-image {
@@ -206,7 +246,7 @@ function isIconUrl(icon?: string): boolean {
   }
 
   .icon-emoji {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
   }
 
   .card-title {

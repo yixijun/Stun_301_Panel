@@ -41,12 +41,14 @@ function handleDelete(appid: string) {
 <style scoped>
 .nav-grid-container {
   min-height: 200px;
+  position: relative;
+  z-index: 1;
 }
 
 .nav-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
 }
 
 .empty-state {
@@ -54,25 +56,35 @@ function handleDelete(appid: string) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
+  padding: 5rem 2rem;
   text-align: center;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-xl);
+  border: 2px dashed var(--border-color);
 }
 
 .empty-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+  font-size: 4rem;
+  margin-bottom: 1.25rem;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
 .empty-text {
-  font-size: 1.1rem;
-  color: var(--text-secondary);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
   margin: 0 0 0.5rem 0;
 }
 
 .empty-hint {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: var(--text-secondary);
-  opacity: 0.7;
   margin: 0;
 }
 
@@ -84,15 +96,15 @@ function handleDelete(appid: string) {
   }
 
   .empty-state {
-    padding: 2rem 1rem;
+    padding: 3rem 1.5rem;
   }
 
   .empty-icon {
-    font-size: 2.5rem;
+    font-size: 3rem;
   }
 
   .empty-text {
-    font-size: 1rem;
+    font-size: 1.05rem;
   }
 }
 </style>

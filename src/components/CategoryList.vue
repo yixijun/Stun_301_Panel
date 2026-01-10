@@ -86,7 +86,7 @@ function handleDeleteCategory(id: string, event: Event) {
 
 <style scoped>
 .category-list {
-  padding: 0 0.5rem;
+  padding: 0 0.75rem;
 }
 
 .category-header {
@@ -94,20 +94,27 @@ function handleDeleteCategory(id: string, event: Event) {
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 0.75rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .category-title {
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
 }
 
 .add-btn {
   font-size: 0.9rem;
-  padding: 0.25rem;
+  padding: 0.35rem;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.add-btn:hover {
+  background: var(--primary-light);
+  transform: scale(1.1);
 }
 
 .categories {
@@ -120,32 +127,55 @@ function handleDeleteCategory(id: string, event: Event) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.7rem 0.75rem;
-  margin: 0.25rem 0;
-  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  margin: 0.35rem 0;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--transition-normal);
   user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.category-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--primary-color), var(--accent-color));
+  transform: scaleY(0);
+  transition: transform var(--transition-normal);
 }
 
 .category-item:hover {
-  background: var(--bg-color);
+  background: var(--primary-light);
+}
+
+.category-item:hover::before {
+  transform: scaleY(1);
 }
 
 .category-item.active {
-  background: var(--primary-color);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
   color: white;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.category-item.active::before {
+  display: none;
 }
 
 .category-item.active .category-count {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
   color: white;
 }
 
 .category-name {
   flex: 1;
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -153,28 +183,32 @@ function handleDeleteCategory(id: string, event: Event) {
 
 .category-count {
   font-size: 0.8rem;
-  padding: 0.15rem 0.5rem;
+  padding: 0.2rem 0.6rem;
   background: var(--bg-color);
-  border-radius: 10px;
+  border-radius: 20px;
   color: var(--text-secondary);
-  min-width: 24px;
+  min-width: 28px;
   text-align: center;
+  font-weight: 600;
+  transition: all var(--transition-fast);
 }
 
 .category-actions {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.35rem;
 }
 
 .action-btn {
   font-size: 0.85rem;
-  padding: 0.2rem 0.35rem;
-  opacity: 0.7;
-  transition: opacity 0.15s ease;
+  padding: 0.25rem 0.4rem;
+  opacity: 0.8;
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-sm);
 }
 
 .action-btn:hover {
   opacity: 1;
+  transform: scale(1.1);
 }
 
 .action-btn.danger:hover {
@@ -190,6 +224,7 @@ function handleDeleteCategory(id: string, event: Event) {
 }
 
 .category-item.active .action-btn.danger:hover {
-  color: #ffcccc;
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.2);
 }
 </style>

@@ -147,92 +147,134 @@ function closeShareModal() {
 
 .main-content {
   flex: 1;
-  margin-left: 260px;
-  padding: 1.5rem 2rem;
-  background: var(--bg-color);
+  margin-left: 280px;
+  padding: 2rem 2.5rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   min-height: 100vh;
+  position: relative;
+}
+
+.main-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  pointer-events: none;
 }
 
 .content-header {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
+  gap: 0.875rem;
+  position: relative;
+  z-index: 1;
 }
 
 .share-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  background: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  color: var(--text-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
   font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: all var(--transition-normal);
 }
 
 .share-btn:hover {
-  background: #5a6268;
+  background: white;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
 }
 
 .add-nav-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  background: var(--primary-color);
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.add-nav-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.add-nav-btn:hover::before {
+  left: 100%;
 }
 
 .add-nav-btn:hover {
-  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -10px rgba(99, 102, 241, 0.5);
 }
 
 .loading {
   text-align: center;
-  padding: 2rem;
+  padding: 3rem;
   color: var(--text-secondary);
+  font-size: 1rem;
 }
 
 .error-message {
   text-align: center;
-  padding: 1rem;
+  padding: 1.25rem;
   color: var(--danger-color);
-  background: #fff5f5;
-  border-radius: 8px;
-  margin-top: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-md);
+  margin-top: 1.5rem;
+  font-weight: 500;
 }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .main-content {
     margin-left: 0;
-    padding: 1rem;
-    padding-top: 70px; /* Account for mobile header */
+    padding: 1.25rem;
+    padding-top: 80px;
   }
 
   .content-header {
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
   }
 
   .add-nav-btn {
     flex: 1;
     justify-content: center;
-    padding: 0.8rem 1rem;
+    padding: 0.875rem 1rem;
   }
 
   .share-btn {
     flex: 1;
     justify-content: center;
-    padding: 0.8rem 1rem;
+    padding: 0.875rem 1rem;
   }
 }
 </style>

@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { useNavStore } from '../stores/navStore';
 import CategoryList from './CategoryList.vue';
 
 const store = useNavStore();
 const isMobileMenuOpen = ref(false);
-const currentTheme = ref<'light' | 'dark' | 'system'>('system');
 
 const emit = defineEmits<{
   (e: 'openSettings'): void;
@@ -13,42 +12,6 @@ const emit = defineEmits<{
   (e: 'editCategory', id: string): void;
   (e: 'deleteCategory', id: string): void;
 }>();
-
-onMounted(() => {
-  const saved = localStorage.getItem('theme');
-  if (saved === 'light' || saved === 'dark' || saved === 'system') {
-    currentTheme.value = saved;
-    applyTheme(saved);
-  }
-});
-
-function applyTheme(theme: 'light' | 'dark' | 'system') {
-  if (theme === 'system') {
-    document.documentElement.removeAttribute('data-theme');
-  } else {
-    document.documentElement.setAttribute('data-theme', theme);
-  }
-}
-
-function toggleTheme() {
-  const themes = ['light', 'dark', 'system'] as const;
-  const currentIndex = themes.indexOf(currentTheme.value);
-  const nextIndex = (currentIndex + 1) % themes.length;
-  const nextTheme = themes[nextIndex];
-  if (nextTheme) {
-    currentTheme.value = nextTheme;
-    localStorage.setItem('theme', nextTheme);
-    applyTheme(nextTheme);
-  }
-}
-
-function getThemeIcon() {
-  switch (currentTheme.value) {
-    case 'light': return '☀️';
-    case 'dark': return '🌙';
-    default: return '💻';
-  }
-}
 
 function handleToggleEditMode() {
   store.toggleEditMode();
@@ -103,15 +66,6 @@ function closeMobileMenu() {
     </div>
     
     <div class="sidebar-footer">
-      <button 
-        class="theme-toggle icon-btn"
-        @click="toggleTheme"
-        :aria-label="'切换主题: ' + currentTheme"
-        :title="currentTheme === 'light' ? '浅色模式' : currentTheme === 'dark' ? '深色模式' : '跟随系统'"
-      >
-        <span class="icon">{{ getThemeIcon() }}</span>
-      </button>
-
       <button 
         class="edit-toggle"
         :class="{ active: store.isEditMode }"
@@ -271,23 +225,6 @@ function closeMobileMenu() {
   align-items: center;
   gap: 0.75rem;
   background: linear-gradient(0deg, var(--primary-light) 0%, transparent 100%);
-}
-
-.theme-toggle {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md);
-  font-size: 1.25rem;
-  background: var(--glass-bg);
-  border: 2px solid var(--border-color);
-  transition: all var(--transition-normal);
-  flex-shrink: 0;
-}
-
-.theme-toggle:hover {
-  border-color: var(--primary-color);
-  background: var(--primary-light);
-  transform: rotate(20deg);
 }
 
 .edit-toggle {

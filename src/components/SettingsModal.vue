@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useNavStore } from '../stores/navStore';
 import type { AppData } from '../types';
 
@@ -8,6 +8,30 @@ const emit = defineEmits<{
 }>();
 
 const store = useNavStore();
+
+// Theme
+const currentTheme = ref<'light' | 'dark' | 'system'>('system');
+
+onMounted(() => {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light' || saved === 'dark' || saved === 'system') {
+    currentTheme.value = saved;
+  }
+});
+
+function applyTheme(theme: 'light' | 'dark' | 'system') {
+  if (theme === 'system') {
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+}
+
+function setTheme(theme: 'light' | 'dark' | 'system') {
+  currentTheme.value = theme;
+  localStorage.setItem('theme', theme);
+  applyTheme(theme);
+}
 
 // API Key
 const apiKey = ref(store.settings.apiKey);
@@ -177,6 +201,39 @@ function handleOverlayClick(event: Event) {
       </div>
       
       <div class="settings-content">
+        <!-- Theme Section -->
+        <section class="settings-section">
+          <h3>外观</h3>
+          <p class="section-desc">选择界面主题</p>
+          
+          <div class="theme-options">
+            <button 
+              class="theme-btn"
+              :class="{ active: currentTheme === 'light' }"
+              @click="setTheme('light')"
+            >
+              <span class="theme-icon">☀️</span>
+              <span class="theme-label">浅色</span>
+            </button>
+            <button 
+              class="theme-btn"
+              :class="{ active: currentTheme === 'dark' }"
+              @click="setTheme('dark')"
+            >
+              <span class="theme-icon">🌙</span>
+              <span class="theme-label">深色</span>
+            </button>
+            <button 
+              class="theme-btn"
+              :class="{ active: currentTheme === 'system' }"
+              @click="setTheme('system')"
+            >
+              <span class="theme-icon">💻</span>
+              <span class="theme-label">跟随系统</span>
+            </button>
+          </div>
+        </section>
+
         <!-- Auth Section -->
         <section class="settings-section">
           <h3>登录设置</h3>
@@ -314,6 +371,46 @@ function handleOverlayClick(event: Event) {
   font-size: 0.85rem;
   color: var(--text-secondary);
   margin-bottom: 1rem;
+}
+
+.theme-options {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.theme-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.75rem;
+  background: var(--glass-bg);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.theme-btn:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-light);
+}
+
+.theme-btn.active {
+  border-color: var(--primary-color);
+  background: var(--primary-light);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.theme-icon {
+  font-size: 1.5rem;
+}
+
+.theme-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .api-key-input {

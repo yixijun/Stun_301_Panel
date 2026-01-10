@@ -7,7 +7,18 @@ const store = useNavStore();
 const loginRef = ref<InstanceType<typeof LoginModal> | null>(null);
 const isCheckingAuth = ref(true);
 
+// 初始化主题
+function initTheme() {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light' || saved === 'dark') {
+    document.documentElement.setAttribute('data-theme', saved);
+  }
+}
+
 onMounted(async () => {
+  // 初始化主题
+  initTheme();
+  
   // 检查是否已登录
   if (store.checkAuth()) {
     await store.loadData();

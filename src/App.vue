@@ -12,6 +12,10 @@ function initTheme() {
   const saved = localStorage.getItem('theme');
   if (saved === 'light' || saved === 'dark') {
     document.documentElement.setAttribute('data-theme', saved);
+  } else if (saved === 'auto') {
+    const hour = new Date().getHours();
+    const autoTheme = (hour >= 6 && hour < 18) ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', autoTheme);
   }
 }
 

@@ -10,24 +10,33 @@ const emit = defineEmits<{
 const store = useNavStore();
 
 // Theme
-const currentTheme = ref<'light' | 'dark' | 'system'>('system');
+const currentTheme = ref<'light' | 'dark' | 'system' | 'auto'>('system');
 
 onMounted(() => {
   const saved = localStorage.getItem('theme');
-  if (saved === 'light' || saved === 'dark' || saved === 'system') {
+  if (saved === 'light' || saved === 'dark' || saved === 'system' || saved === 'auto') {
     currentTheme.value = saved;
+    applyTheme(saved);
   }
 });
 
-function applyTheme(theme: 'light' | 'dark' | 'system') {
+function getAutoTheme(): 'light' | 'dark' {
+  const hour = new Date().getHours();
+  // 6:00 - 18:00 浅色，其他时间深色
+  return (hour >= 6 && hour < 18) ? 'light' : 'dark';
+}
+
+function applyTheme(theme: 'light' | 'dark' | 'system' | 'auto') {
   if (theme === 'system') {
     document.documentElement.removeAttribute('data-theme');
+  } else if (theme === 'auto') {
+    document.documentElement.setAttribute('data-theme', getAutoTheme());
   } else {
     document.documentElement.setAttribute('data-theme', theme);
   }
 }
 
-function setTheme(theme: 'light' | 'dark' | 'system') {
+function setTheme(theme: 'light' | 'dark' | 'system' | 'auto') {
   currentTheme.value = theme;
   localStorage.setItem('theme', theme);
   applyTheme(theme);
@@ -225,13 +234,22 @@ function handleOverlayClick(event: Event) {
             </button>
             <button 
               class="theme-btn"
+              :class="{ active: currentTheme === 'auto' }"
+              @click="setTheme('auto')"
+            >
+              <span class="theme-icon">🕐</span>
+              <span class="theme-label">定时</span>
+            </button>
+            <button 
+              class="theme-btn"
               :class="{ active: currentTheme === 'system' }"
               @click="setTheme('system')"
             >
               <span class="theme-icon">💻</span>
-              <span class="theme-label">跟随系统</span>
+              <span class="theme-label">系统</span>
             </button>
           </div>
+          <p v-if="currentTheme === 'auto'" class="theme-hint">6:00-18:00 浅色，其他时间深色</p>
         </section>
 
         <!-- Auth Section -->
@@ -411,6 +429,13 @@ function handleOverlayClick(event: Event) {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.theme-hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 0.75rem;
+  text-align: center;
 }
 
 .api-key-input {

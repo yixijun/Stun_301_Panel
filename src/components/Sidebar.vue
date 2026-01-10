@@ -31,12 +31,15 @@ function applyTheme(theme: 'light' | 'dark' | 'system') {
 }
 
 function toggleTheme() {
-  const themes: ('light' | 'dark' | 'system')[] = ['light', 'dark', 'system'];
+  const themes = ['light', 'dark', 'system'] as const;
   const currentIndex = themes.indexOf(currentTheme.value);
-  const nextTheme = themes[(currentIndex + 1) % themes.length];
-  currentTheme.value = nextTheme;
-  localStorage.setItem('theme', nextTheme);
-  applyTheme(nextTheme);
+  const nextIndex = (currentIndex + 1) % themes.length;
+  const nextTheme = themes[nextIndex];
+  if (nextTheme) {
+    currentTheme.value = nextTheme;
+    localStorage.setItem('theme', nextTheme);
+    applyTheme(nextTheme);
+  }
 }
 
 function getThemeIcon() {

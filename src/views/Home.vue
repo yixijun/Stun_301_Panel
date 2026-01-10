@@ -149,9 +149,10 @@ function closeShareModal() {
   flex: 1;
   margin-left: 280px;
   padding: 2rem 2.5rem;
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  background: var(--bg-color);
   min-height: 100vh;
   position: relative;
+  transition: background-color var(--transition-normal);
 }
 
 .main-content::before {
@@ -161,7 +162,7 @@ function closeShareModal() {
   left: 0;
   right: 0;
   height: 200px;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  background: linear-gradient(135deg, var(--primary-light) 0%, rgba(139, 92, 246, 0.05) 100%);
   pointer-events: none;
 }
 
@@ -179,7 +180,7 @@ function closeShareModal() {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--glass-bg);
   backdrop-filter: blur(10px);
   color: var(--text-secondary);
   border: 2px solid var(--border-color);
@@ -191,7 +192,7 @@ function closeShareModal() {
 }
 
 .share-btn:hover {
-  background: white;
+  background: var(--card-bg);
   border-color: var(--primary-color);
   color: var(--primary-color);
   transform: translateY(-2px);

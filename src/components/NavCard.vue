@@ -89,7 +89,7 @@ function isIconUrl(icon?: string): boolean {
 
 <style scoped>
 .nav-card {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--card-bg);
   backdrop-filter: blur(10px);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
@@ -100,7 +100,7 @@ function isIconUrl(icon?: string): boolean {
   cursor: pointer;
   transition: all var(--transition-normal);
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--border-color);
   overflow: hidden;
 }
 
@@ -211,7 +211,7 @@ function isIconUrl(icon?: string): boolean {
 .action-btn {
   font-size: 0.9rem;
   padding: 0.4rem;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--glass-bg);
   border-radius: var(--radius-sm);
   opacity: 0.9;
   transition: all var(--transition-fast);
@@ -221,7 +221,7 @@ function isIconUrl(icon?: string): boolean {
 .action-btn:hover {
   opacity: 1;
   transform: scale(1.1);
-  background: white;
+  background: var(--card-bg);
 }
 
 .action-btn.danger:hover {

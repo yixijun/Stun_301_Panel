@@ -58,7 +58,7 @@ function handleDelete(appid: string) {
   justify-content: center;
   padding: 5rem 2rem;
   text-align: center;
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--glass-bg);
   backdrop-filter: blur(10px);
   border-radius: var(--radius-xl);
   border: 2px dashed var(--border-color);

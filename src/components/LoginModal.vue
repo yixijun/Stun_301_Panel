@@ -87,6 +87,16 @@ defineExpose({ setError });
   overflow: hidden;
 }
 
+[data-theme="dark"] .login-container {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .login-container {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+  }
+}
+
 .login-container::before {
   content: '';
   position: absolute;
@@ -110,14 +120,14 @@ defineExpose({ setError });
 }
 
 .login-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--modal-bg);
   backdrop-filter: blur(20px);
   border-radius: var(--radius-xl);
   padding: 3rem;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 60px rgba(102, 126, 234, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), var(--shadow-glow);
+  border: 1px solid var(--border-color);
   position: relative;
   z-index: 1;
   animation: cardAppear 0.6s ease;

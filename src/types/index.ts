@@ -54,6 +54,20 @@ export interface ShareLinkDisplay {
 }
 
 /**
+ * AccessLog - 访问日志
+ */
+export interface AccessLog {
+  id: string;
+  shareId: string;
+  appid: string;
+  ip?: string;
+  country?: string;
+  city?: string;
+  userAgent?: string;
+  timestamp: number;
+}
+
+/**
  * AppData - 应用数据
  */
 export interface AppData {

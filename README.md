@@ -172,3 +172,83 @@ curl -X POST "https://your-domain.com/api/webhook/service?key=YOUR_API_KEY&appid
 - 前端：Vue 3 + TypeScript + Pinia + Vite
 - 后端：Node.js + Express（本地）/ Cloudflare Pages Functions（云端）
 - 存储：JSON 文件（本地）/ Cloudflare KV（云端）
+
+## Webhook 使用示例
+
+### MC 服务器地址自动更新
+
+适用于使用 DDNS、frp 等内网穿透工具的场景，当服务器地址变化时自动更新导航页。
+
+**使用 curl：**
+```bash
+curl -X POST "https://your-domain.com/api/webhook/mc?key=YOUR_API_KEY&appid=my-mc-server&host=新地址&port=端口"
+```
+
+**使用 Python：**
+```python
+import requests
+
+def update_mc_server(api_key, appid, host, port=None):
+    url = "https://your-domain.com/api/webhook/mc"
+    params = {
+        "key": api_key,
+        "appid": appid,
+        "host": host
+    }
+    if port:
+        params["port"] = port
+    response = requests.post(url, params=params)
+    return response.json()
+
+# 示例调用
+update_mc_server("your-api-key", "my-mc-server", "mc.example.com", 25565)
+```
+
+**配合 frp 使用：**
+
+在 frp 客户端配置中添加启动后脚本，自动更新导航页：
+```ini
+[mc-server]
+type = tcp
+local_ip = 127.0.0.1
+local_port = 25565
+remote_port = 25565
+
+# 启动后执行更新脚本
+plugin_after_start = curl -X POST "https://your-domain.com/api/webhook/mc?key=API_KEY&appid=my-mc&host=frp.example.com&port=25565"
+```
+
+### 服务状态监控
+
+可以配合监控脚本自动更新服务状态：
+
+```bash
+#!/bin/bash
+# 检查服务是否运行
+if systemctl is-active --quiet my-service; then
+    STATUS="online"
+else
+    STATUS="offline"
+fi
+
+# 更新导航页状态
+curl -X POST "https://your-domain.com/api/webhook/service?key=API_KEY&appid=my-service&status=$STATUS"
+```
+
+## 导航项类型说明
+
+| 类型 | 说明 | 点击行为 |
+|------|------|----------|
+| web | 普通网页链接 | 新窗口打开链接 |
+| service | 服务面板 | 跳转到详情页 |
+| mc-java | Minecraft Java版服务器 | 显示服务器信息卡片 |
+| mc-pe | Minecraft 基岩版服务器 | 显示服务器信息卡片 |
+
+### MC 服务器卡片功能
+
+- 显示服务器地址（点击复制）
+- 实时查询服务器状态
+- 显示游戏版本
+- 显示在线人数和最大人数
+- 显示在线玩家列表
+- 支持手动刷新状态

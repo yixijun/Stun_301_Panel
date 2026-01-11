@@ -453,6 +453,192 @@ function generateShareId(): string {
   return result;
 }
 
+// Handle GET /api/mc-status - Query MC server status
+async function handleMcStatus(url: URL): Promise<Response> {
+  try {
+    const host = url.searchParams.get('host');
+    const port = url.searchParams.get('port');
+    const type = url.searchParams.get('type') || 'java';
+
+    if (!host) {
+      return errorResponse('Missing required parameter: host', 400);
+    }
+
+    const serverAddress = port ? `${host}:${port}` : host;
+    const apiBase = type === 'bedrock' 
+      ? 'https://api.mcsrvstat.us/bedrock/3/' 
+      : 'https://api.mcsrvstat.us/3/';
+    const apiUrl = `${apiBase}${encodeURIComponent(serverAddress)}`;
+
+    const response = await fetch(apiUrl, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'NavPortal/1.0'
+      }
+    });
+
+    if (!response.ok) {
+      return jsonResponse({ success: true, status: { online: false } });
+    }
+
+    const data = await response.json() as {
+      online: boolean;
+      version?: string;
+      players?: { online: number; max: number; list?: Array<{ name: string }> };
+      motd?: { clean?: string[] };
+      icon?: string;
+    };
+
+    const status = {
+      online: data.online,
+      version: data.version,
+      players: data.players ? {
+        online: data.players.online,
+        max: data.players.max,
+        list: data.players.list?.map(p => p.name)
+      } : undefined,
+      motd: data.motd?.clean?.join('\n'),
+      icon: data.icon
+    };
+
+    return jsonResponse({ success: true, status });
+  } catch {
+    return jsonResponse({ success: true, status: { online: false } });
+  }
+}
+
+// Handle GET /api/webhook/item - Get full nav item info
+async function handleGetItem(storage: KVAdapter, url: URL): Promise<Response> {
+  try {
+    const key = url.searchParams.get('key');
+    const authError = await validateApiKey(storage, key);
+    if (authError) return authError;
+
+    const appid = url.searchParams.get('appid');
+    if (!appid) {
+      return errorResponse('Missing required parameter: appid', 400);
+    }
+
+    const navItem = await storage.getNavItem(appid);
+    if (!navItem) {
+      return errorResponse('AppID not found', 404);
+    }
+
+    return jsonResponse({ success: true, item: navItem });
+  } catch {
+    return errorResponse('Internal server error', 500);
+  }
+}
+
+// Handle POST /api/webhook/mc - Update MC server info
+async function handleUpdateMcServer(storage: KVAdapter, url: URL, request: Request): Promise<Response> {
+  try {
+    const key = url.searchParams.get('key');
+    const authError = await validateApiKey(storage, key);
+    if (authError) return authError;
+
+    const appid = url.searchParams.get('appid');
+    if (!appid) {
+      return errorResponse('Missing required parameter: appid', 400);
+    }
+
+    const data = await storage.getData();
+    const item = data.navItems.find(i => i.appid === appid);
+
+    if (!item) {
+      return errorResponse('AppID not found', 404);
+    }
+
+    if (item.type !== 'mc-java' && item.type !== 'mc-pe') {
+      return errorResponse('NavItem is not a MC server type', 400);
+    }
+
+    // Get params from URL or body
+    let body: { host?: string; port?: number } = {};
+    try {
+      body = await request.json();
+    } catch {
+      // No body, use URL params only
+    }
+
+    const host = url.searchParams.get('host') || body.host;
+    const portStr = url.searchParams.get('port');
+    const port = portStr ? parseInt(portStr, 10) : body.port;
+
+    if (!item.mcServer) {
+      item.mcServer = { host: '', port: item.type === 'mc-java' ? 25565 : 19132 };
+    }
+
+    if (host) item.mcServer.host = host;
+    if (port) item.mcServer.port = port;
+
+    await storage.saveData(data);
+    return jsonResponse({ success: true, message: 'MC server info updated' });
+  } catch {
+    return errorResponse('Internal server error', 500);
+  }
+}
+
+// Handle POST /api/webhook/service - Update service info
+async function handleUpdateService(storage: KVAdapter, url: URL, request: Request): Promise<Response> {
+  try {
+    const key = url.searchParams.get('key');
+    const authError = await validateApiKey(storage, key);
+    if (authError) return authError;
+
+    const appid = url.searchParams.get('appid');
+    if (!appid) {
+      return errorResponse('Missing required parameter: appid', 400);
+    }
+
+    const data = await storage.getData();
+    const item = data.navItems.find(i => i.appid === appid);
+
+    if (!item) {
+      return errorResponse('AppID not found', 404);
+    }
+
+    if (item.type !== 'service') {
+      return errorResponse('NavItem is not a service type', 400);
+    }
+
+    // Get params from URL or body
+    let body: { 
+      status?: 'online' | 'offline' | 'unknown';
+      description?: string;
+      features?: string[];
+      contact?: string;
+      link?: string;
+    } = {};
+    try {
+      body = await request.json();
+    } catch {
+      // No body, use URL params only
+    }
+
+    const status = (url.searchParams.get('status') as 'online' | 'offline' | 'unknown') || body.status;
+    const description = url.searchParams.get('description') || body.description;
+    const features = body.features;
+    const contact = url.searchParams.get('contact') || body.contact;
+    const link = url.searchParams.get('link') || body.link;
+
+    if (!item.serviceInfo) {
+      item.serviceInfo = {};
+    }
+
+    if (status) item.serviceInfo.status = status;
+    if (description) item.serviceInfo.description = description;
+    if (features) item.serviceInfo.features = features;
+    if (contact) item.serviceInfo.contact = contact;
+    if (link) item.link = link;
+
+    await storage.saveData(data);
+    return jsonResponse({ success: true, message: 'Service info updated' });
+  } catch {
+    return errorResponse('Internal server error', 500);
+  }
+}
+
 // Handle GET /api/debug - Debug endpoint to check stored data
 async function handleDebug(storage: KVAdapter, url: URL): Promise<Response> {
   try {
@@ -571,7 +757,7 @@ export async function onRequest(context: CFContext): Promise<Response> {
   if (apiPath.startsWith('go/')) {
     const shareId = apiPath.substring(3);
     if (method === 'GET') {
-      return handleGo(storage, shareId);
+      return handleGo(storage, shareId, request);
     }
   }
 
@@ -579,6 +765,38 @@ export async function onRequest(context: CFContext): Promise<Response> {
     const shareId = apiPath.substring(6);
     if (method === 'DELETE') {
       return handleDeleteShare(storage, shareId);
+    }
+  }
+
+  // MC status query
+  if (apiPath === 'mc-status') {
+    if (method === 'GET') {
+      return handleMcStatus(url);
+    }
+  }
+
+  // Webhook routes
+  if (apiPath === 'webhook/mc') {
+    if (method === 'GET') {
+      return handleGetItem(storage, url);
+    }
+    if (method === 'POST') {
+      return handleUpdateMcServer(storage, url, request);
+    }
+  }
+
+  if (apiPath === 'webhook/service') {
+    if (method === 'GET') {
+      return handleGetItem(storage, url);
+    }
+    if (method === 'POST') {
+      return handleUpdateService(storage, url, request);
+    }
+  }
+
+  if (apiPath === 'webhook/item') {
+    if (method === 'GET') {
+      return handleGetItem(storage, url);
     }
   }
 

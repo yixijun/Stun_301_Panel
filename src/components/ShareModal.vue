@@ -20,9 +20,7 @@ const extraParams = ref('');
 const paramType = ref<'path' | 'query'>('path');
 const expiresIn = ref(0);
 
-const navItemOptions = computed(() => 
-  store.navItems.filter(item => !item.type || item.type === 'web')
-);
+const navItemOptions = computed(() => store.navItems);
 
 async function loadShareLinks() {
   isLoading.value = true;

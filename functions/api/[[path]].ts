@@ -262,7 +262,7 @@ function handleHealth(): Response {
   return jsonResponse({ status: 'ok', timestamp: new Date().toISOString() });
 }
 
-// Handle GET /api/go/:id - Redirect to target link
+// Handle GET /api/go/:id - Redirect to target or show info card
 async function handleGo(storage: KVAdapter, shareId: string, request: Request): Promise<Response> {
   try {
     const data = await storage.getData();
@@ -307,7 +307,14 @@ async function handleGo(storage: KVAdapter, shareId: string, request: Request): 
     }
     await storage.saveData(data);
     
-    // Build redirect URL with params
+    // For non-web types (service, mc-java, mc-pe), redirect to share view page
+    if (navItem.type && navItem.type !== 'web') {
+      const url = new URL(request.url);
+      const baseUrl = `${url.protocol}//${url.host}`;
+      return Response.redirect(`${baseUrl}/share/${shareLink.appid}`, 302);
+    }
+    
+    // For web type, redirect directly to target link
     let targetUrl = navItem.link;
     if (shareLink.params) {
       // Check if it's a path-type param (prefixed with __path__:)

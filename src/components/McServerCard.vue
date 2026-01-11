@@ -54,6 +54,10 @@ async function fetchServerStatus(silent = false) {
   }
 }
 
+function handleManualRefresh() {
+  fetchServerStatus(false);
+}
+
 function startAutoRefresh() {
   stopAutoRefresh();
   if (!autoRefreshEnabled.value) return;
@@ -185,7 +189,7 @@ onUnmounted(() => {
     </div>
 
     <div class="card-footer">
-      <button class="refresh-btn" @click="fetchServerStatus" :disabled="isLoading">
+      <button class="refresh-btn" @click="handleManualRefresh" :disabled="isLoading">
         🔄 {{ isLoading ? '刷新中...' : '刷新状态' }}
       </button>
       <button 

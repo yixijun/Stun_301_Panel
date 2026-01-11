@@ -94,6 +94,10 @@ async function fetchMcStatus(silent = false) {
   }
 }
 
+function handleManualRefresh() {
+  fetchMcStatus(false);
+}
+
 function startAutoRefresh() {
   stopAutoRefresh();
   if (!autoRefreshEnabled.value) return;
@@ -319,7 +323,7 @@ onUnmounted(() => {
         </div>
 
         <div class="mc-footer">
-          <button class="refresh-btn" @click="fetchMcStatus" :disabled="mcLoading">
+          <button class="refresh-btn" @click="handleManualRefresh" :disabled="mcLoading">
             🔄 {{ mcLoading ? '刷新中...' : '刷新状态' }}
           </button>
           <button 

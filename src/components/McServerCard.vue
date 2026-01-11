@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import type { NavItem, McServerStatus } from '../types';
 import { useNavStore } from '../stores/navStore';
 import { apiClient } from '../api/client';
@@ -16,6 +16,10 @@ const emit = defineEmits<{
 const store = useNavStore();
 const serverStatus = ref<McServerStatus | null>(null);
 const isLoading = ref(true);
+const autoRefreshEnabled = ref(true);
+const countdown = ref(5);
+let refreshTimer: ReturnType<typeof setInterval> | null = null;
+let countdownTimer: ReturnType<typeof setInterval> | null = null;
 
 const serverAddress = computed(() => {
   if (!props.item.mcServer) return '';
@@ -42,6 +46,45 @@ async function fetchServerStatus() {
     serverStatus.value = { online: false };
   } finally {
     isLoading.value = false;
+    countdown.value = 5;
+  }
+}
+
+function startAutoRefresh() {
+  stopAutoRefresh();
+  if (!autoRefreshEnabled.value) return;
+  
+  countdown.value = 5;
+  countdownTimer = setInterval(() => {
+    if (countdown.value > 0) {
+      countdown.value--;
+    }
+  }, 1000);
+  
+  refreshTimer = setInterval(() => {
+    if (autoRefreshEnabled.value && !isLoading.value) {
+      fetchServerStatus();
+    }
+  }, 5000);
+}
+
+function stopAutoRefresh() {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+}
+
+function toggleAutoRefresh() {
+  autoRefreshEnabled.value = !autoRefreshEnabled.value;
+  if (autoRefreshEnabled.value) {
+    startAutoRefresh();
+  } else {
+    stopAutoRefresh();
   }
 }
 
@@ -61,6 +104,11 @@ function copyAddress() {
 
 onMounted(() => {
   fetchServerStatus();
+  startAutoRefresh();
+});
+
+onUnmounted(() => {
+  stopAutoRefresh();
 });
 </script>
 
@@ -132,9 +180,19 @@ onMounted(() => {
       </template>
     </div>
 
-    <button class="refresh-btn" @click="fetchServerStatus" :disabled="isLoading">
-      🔄 刷新状态
-    </button>
+    <div class="card-footer">
+      <button class="refresh-btn" @click="fetchServerStatus" :disabled="isLoading">
+        🔄 {{ isLoading ? '刷新中...' : '刷新状态' }}
+      </button>
+      <button 
+        class="auto-refresh-btn" 
+        :class="{ active: autoRefreshEnabled }"
+        @click="toggleAutoRefresh"
+      >
+        <span v-if="autoRefreshEnabled">⏱️ {{ countdown }}s</span>
+        <span v-else>⏸️ 已暂停</span>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -371,8 +429,13 @@ onMounted(() => {
   font-weight: 500;
 }
 
+.card-footer {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .refresh-btn {
-  width: 100%;
+  flex: 1;
   padding: 0.75rem;
   background: var(--glass-bg);
   border: 1px solid var(--border-color);
@@ -392,5 +455,28 @@ onMounted(() => {
 .refresh-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.auto-refresh-btn {
+  padding: 0.75rem 1rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-width: 80px;
+}
+
+.auto-refresh-btn:hover {
+  background: var(--primary-light);
+  border-color: var(--primary-color);
+}
+
+.auto-refresh-btn.active {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: var(--success-color);
+  color: var(--success-color);
 }
 </style>

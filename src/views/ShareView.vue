@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useNavStore } from '../stores/navStore';
 import type { NavItem, McServerStatus } from '../types';
@@ -14,6 +14,10 @@ const isLoading = ref(true);
 const error = ref<string | null>(null);
 const mcStatus = ref<McServerStatus | null>(null);
 const mcLoading = ref(false);
+const autoRefreshEnabled = ref(true);
+const countdown = ref(5);
+let refreshTimer: ReturnType<typeof setInterval> | null = null;
+let countdownTimer: ReturnType<typeof setInterval> | null = null;
 
 // MC server computed
 const serverAddress = computed(() => {
@@ -56,9 +60,10 @@ async function loadItem() {
       return;
     }
     
-    // If MC type, fetch server status
+    // If MC type, fetch server status and start auto refresh
     if (item.value.type === 'mc-java' || item.value.type === 'mc-pe') {
       await fetchMcStatus();
+      startAutoRefresh();
     }
   } catch (e) {
     error.value = '加载失败';
@@ -81,6 +86,45 @@ async function fetchMcStatus() {
     mcStatus.value = { online: false };
   } finally {
     mcLoading.value = false;
+    countdown.value = 5;
+  }
+}
+
+function startAutoRefresh() {
+  stopAutoRefresh();
+  if (!autoRefreshEnabled.value) return;
+  
+  countdown.value = 5;
+  countdownTimer = setInterval(() => {
+    if (countdown.value > 0) {
+      countdown.value--;
+    }
+  }, 1000);
+  
+  refreshTimer = setInterval(() => {
+    if (autoRefreshEnabled.value && !mcLoading.value) {
+      fetchMcStatus();
+    }
+  }, 5000);
+}
+
+function stopAutoRefresh() {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+}
+
+function toggleAutoRefresh() {
+  autoRefreshEnabled.value = !autoRefreshEnabled.value;
+  if (autoRefreshEnabled.value) {
+    startAutoRefresh();
+  } else {
+    stopAutoRefresh();
   }
 }
 
@@ -110,6 +154,10 @@ function isIconUrl(icon?: string): boolean {
 }
 
 onMounted(loadItem);
+
+onUnmounted(() => {
+  stopAutoRefresh();
+});
 </script>
 
 <template>
@@ -266,9 +314,19 @@ onMounted(loadItem);
           </template>
         </div>
 
-        <button class="refresh-btn" @click="fetchMcStatus" :disabled="mcLoading">
-          🔄 刷新状态
-        </button>
+        <div class="mc-footer">
+          <button class="refresh-btn" @click="fetchMcStatus" :disabled="mcLoading">
+            🔄 {{ mcLoading ? '刷新中...' : '刷新状态' }}
+          </button>
+          <button 
+            class="auto-refresh-btn" 
+            :class="{ active: autoRefreshEnabled }"
+            @click="toggleAutoRefresh"
+          >
+            <span v-if="autoRefreshEnabled">⏱️ {{ countdown }}s</span>
+            <span v-else>⏸️ 已暂停</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -673,8 +731,13 @@ onMounted(loadItem);
   white-space: pre-wrap;
 }
 
+.mc-footer {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .refresh-btn {
-  width: 100%;
+  flex: 1;
   padding: 0.875rem;
   background: var(--glass-bg);
   border: 1px solid var(--border-color);
@@ -694,6 +757,29 @@ onMounted(loadItem);
 .refresh-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.auto-refresh-btn {
+  padding: 0.875rem 1.25rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-width: 90px;
+}
+
+.auto-refresh-btn:hover {
+  background: var(--primary-light);
+  border-color: var(--primary-color);
+}
+
+.auto-refresh-btn.active {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: var(--success-color);
+  color: var(--success-color);
 }
 
 @media (max-width: 768px) {

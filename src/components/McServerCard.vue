@@ -16,6 +16,7 @@ const emit = defineEmits<{
 const store = useNavStore();
 const serverStatus = ref<McServerStatus | null>(null);
 const isLoading = ref(true);
+const isFirstLoad = ref(true);
 const autoRefreshEnabled = ref(true);
 const countdown = ref(5);
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
@@ -32,9 +33,11 @@ const gameVersion = computed(() => {
   return props.item.type === 'mc-java' ? 'Java版' : '基岩版';
 });
 
-async function fetchServerStatus() {
+async function fetchServerStatus(silent = false) {
   if (!props.item.mcServer) return;
-  isLoading.value = true;
+  if (!silent) {
+    isLoading.value = true;
+  }
   try {
     const type = props.item.type === 'mc-java' ? 'java' : 'bedrock';
     serverStatus.value = await apiClient.getMcServerStatus(
@@ -46,6 +49,7 @@ async function fetchServerStatus() {
     serverStatus.value = { online: false };
   } finally {
     isLoading.value = false;
+    isFirstLoad.value = false;
     countdown.value = 5;
   }
 }
@@ -63,7 +67,7 @@ function startAutoRefresh() {
   
   refreshTimer = setInterval(() => {
     if (autoRefreshEnabled.value && !isLoading.value) {
-      fetchServerStatus();
+      fetchServerStatus(true); // silent refresh
     }
   }, 5000);
 }
@@ -143,11 +147,11 @@ onUnmounted(() => {
         <span class="copy-icon">📋</span>
       </div>
 
-      <div v-if="isLoading" class="status-loading">
+      <div v-if="isLoading && isFirstLoad" class="status-loading">
         <span class="spinner"></span> 查询中...
       </div>
 
-      <template v-else-if="serverStatus">
+      <template v-if="serverStatus">
         <div class="status-row">
           <span class="label">状态</span>
           <span class="status-badge" :class="serverStatus.online ? 'online' : 'offline'">

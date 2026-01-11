@@ -14,6 +14,7 @@ const isLoading = ref(true);
 const error = ref<string | null>(null);
 const mcStatus = ref<McServerStatus | null>(null);
 const mcLoading = ref(false);
+const isFirstMcLoad = ref(true);
 const autoRefreshEnabled = ref(true);
 const countdown = ref(5);
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
@@ -72,9 +73,11 @@ async function loadItem() {
   }
 }
 
-async function fetchMcStatus() {
+async function fetchMcStatus(silent = false) {
   if (!item.value?.mcServer) return;
-  mcLoading.value = true;
+  if (!silent) {
+    mcLoading.value = true;
+  }
   try {
     const type = item.value.type === 'mc-java' ? 'java' : 'bedrock';
     mcStatus.value = await apiClient.getMcServerStatus(
@@ -86,6 +89,7 @@ async function fetchMcStatus() {
     mcStatus.value = { online: false };
   } finally {
     mcLoading.value = false;
+    isFirstMcLoad.value = false;
     countdown.value = 5;
   }
 }
@@ -103,7 +107,7 @@ function startAutoRefresh() {
   
   refreshTimer = setInterval(() => {
     if (autoRefreshEnabled.value && !mcLoading.value) {
-      fetchMcStatus();
+      fetchMcStatus(true); // silent refresh
     }
   }, 5000);
 }
@@ -272,11 +276,11 @@ onUnmounted(() => {
             <span class="copy-icon">📋</span>
           </div>
 
-          <div v-if="mcLoading" class="status-loading">
+          <div v-if="mcLoading && isFirstMcLoad" class="status-loading">
             <span class="spinner small"></span> 查询服务器状态...
           </div>
 
-          <template v-else-if="mcStatus">
+          <template v-if="mcStatus">
             <div class="status-row">
               <span class="label">状态</span>
               <span class="status-badge" :class="mcStatus.online ? 'online' : 'offline'">

@@ -17,6 +17,7 @@ const mcLoading = ref(false);
 const isFirstMcLoad = ref(true);
 const autoRefreshEnabled = ref(true);
 const countdown = ref(5);
+const copied = ref(false);
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -111,7 +112,7 @@ function startAutoRefresh() {
   
   refreshTimer = setInterval(() => {
     if (autoRefreshEnabled.value && !mcLoading.value) {
-      fetchMcStatus(true); // silent refresh
+      fetchMcStatus(true);
     }
   }, 5000);
 }
@@ -138,6 +139,8 @@ function toggleAutoRefresh() {
 
 function copyAddress() {
   navigator.clipboard.writeText(serverAddress.value);
+  copied.value = true;
+  setTimeout(() => { copied.value = false; }, 2000);
 }
 
 function goHome() {
@@ -200,9 +203,7 @@ onUnmounted(() => {
             <span class="type-badge web">🌐 网页链接</span>
           </div>
         </div>
-
         <p v-if="item.description" class="description">{{ item.description }}</p>
-
         <div class="link-section">
           <a :href="item.link" target="_blank" rel="noopener noreferrer" class="link-btn">
             <span>🔗</span> 访问链接
@@ -225,32 +226,12 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-
-        <div class="info-section">
-          <h2 class="section-title">服务描述</h2>
-          <p class="description">{{ item.description || '暂无描述' }}</p>
+        <p v-if="item.description" class="description">{{ item.description }}</p>
+        <div v-if="item.serviceInfo?.features?.length" class="features-row">
+          <span v-for="feature in item.serviceInfo.features" :key="feature" class="feature-tag">
+            {{ feature }}
+          </span>
         </div>
-
-        <div v-if="item.serviceInfo?.description" class="info-section">
-          <h2 class="section-title">详细信息</h2>
-          <p class="description">{{ item.serviceInfo.description }}</p>
-        </div>
-
-        <div v-if="item.serviceInfo?.features?.length" class="info-section">
-          <h2 class="section-title">功能特性</h2>
-          <div class="features-grid">
-            <div v-for="feature in item.serviceInfo.features" :key="feature" class="feature-item">
-              <span class="feature-icon">✓</span>
-              <span>{{ feature }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="item.serviceInfo?.contact" class="info-section">
-          <h2 class="section-title">联系方式</h2>
-          <p class="contact">{{ item.serviceInfo.contact }}</p>
-        </div>
-
         <div v-if="item.link" class="link-section">
           <button class="link-btn" @click="openLink">
             <span>🔗</span> 访问服务
@@ -258,83 +239,102 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- MC 类型 -->
-      <div v-else-if="item.type === 'mc-java' || item.type === 'mc-pe'" class="detail-card mc-card">
-        <div class="card-header">
-          <div class="card-icon large">
-            <img v-if="isIconUrl(item.icon)" :src="item.icon" :alt="item.name" class="icon-image" />
-            <span v-else class="icon-emoji">{{ item.type === 'mc-java' ? '☕' : '📱' }}</span>
+      <!-- MC 类型 - 美化横向布局 -->
+      <div v-else-if="item.type === 'mc-java' || item.type === 'mc-pe'" class="mc-share-card">
+        <!-- 顶部信息区 -->
+        <div class="mc-header">
+          <div class="mc-icon">
+            <img v-if="isIconUrl(item.icon)" :src="item.icon" :alt="item.name" />
+            <span v-else>{{ item.type === 'mc-java' ? '☕' : '📱' }}</span>
           </div>
-          <div class="card-title-area">
-            <h1 class="page-title">{{ item.name }}</h1>
-            <span class="type-badge" :class="item.type">{{ gameVersion }}</span>
-          </div>
-        </div>
-
-        <p v-if="item.description" class="description">{{ item.description }}</p>
-
-        <div class="server-info">
-          <div class="server-address" @click="copyAddress" title="点击复制">
-            <span class="label">服务器地址</span>
-            <span class="value">{{ serverAddress }}</span>
-            <span class="copy-icon">📋</span>
-          </div>
-
-          <div v-if="mcLoading && isFirstMcLoad" class="status-loading">
-            <span class="spinner small"></span> 查询服务器状态...
-          </div>
-
-          <template v-if="mcStatus">
-            <div class="status-row">
-              <span class="label">状态</span>
-              <span class="status-badge" :class="mcStatus.online ? 'online' : 'offline'">
-                {{ mcStatus.online ? '在线' : '离线' }}
+          <div class="mc-title">
+            <h1>{{ item.name }}</h1>
+            <div class="mc-badges">
+              <span class="version-badge" :class="item.type">{{ gameVersion }}</span>
+              <span v-if="mcStatus" class="online-badge" :class="mcStatus.online ? 'online' : 'offline'">
+                {{ mcStatus.online ? '● 在线' : '○ 离线' }}
               </span>
             </div>
-
-            <template v-if="mcStatus.online">
-              <div v-if="mcStatus.version" class="status-row">
-                <span class="label">游戏版本</span>
-                <span class="value">{{ mcStatus.version }}</span>
-              </div>
-
-              <div v-if="mcStatus.players" class="status-row">
-                <span class="label">在线人数</span>
-                <span class="value players">
-                  {{ mcStatus.players.online }} / {{ mcStatus.players.max }}
-                </span>
-              </div>
-
-              <div v-if="mcStatus.players?.list?.length" class="players-list">
-                <span class="label">在线玩家</span>
-                <div class="player-tags">
-                  <span v-for="player in mcStatus.players.list" :key="player" class="player-tag">
-                    {{ player }}
-                  </span>
-                </div>
-              </div>
-
-              <div v-if="mcStatus.motd" class="motd-section">
-                <span class="label">服务器公告</span>
-                <div class="motd-text">{{ mcStatus.motd }}</div>
-              </div>
-            </template>
-          </template>
+          </div>
+          <div class="mc-refresh">
+            <button 
+              class="refresh-icon-btn" 
+              :class="{ spinning: mcLoading && !isFirstMcLoad }"
+              @click="handleManualRefresh" 
+              :disabled="mcLoading"
+              title="刷新状态"
+            >
+              🔄
+            </button>
+            <button 
+              class="auto-btn"
+              :class="{ active: autoRefreshEnabled }"
+              @click="toggleAutoRefresh"
+              :title="autoRefreshEnabled ? '点击暂停自动刷新' : '点击开启自动刷新'"
+            >
+              {{ autoRefreshEnabled ? countdown + 's' : '⏸' }}
+            </button>
+          </div>
         </div>
 
-        <div class="mc-footer">
-          <button class="refresh-btn" @click="handleManualRefresh" :disabled="mcLoading">
-            🔄 {{ mcLoading ? '刷新中...' : '刷新状态' }}
-          </button>
-          <button 
-            class="auto-refresh-btn" 
-            :class="{ active: autoRefreshEnabled }"
-            @click="toggleAutoRefresh"
-          >
-            <span v-if="autoRefreshEnabled">⏱️ {{ countdown }}s</span>
-            <span v-else>⏸️ 已暂停</span>
-          </button>
+        <!-- 服务器地址 -->
+        <div class="mc-address" @click="copyAddress">
+          <div class="address-content">
+            <span class="address-label">服务器地址</span>
+            <span class="address-value">{{ serverAddress }}</span>
+          </div>
+          <span class="copy-btn" :class="{ copied }">
+            {{ copied ? '✓ 已复制' : '📋 复制' }}
+          </span>
         </div>
+
+        <!-- 首次加载提示 -->
+        <div v-if="mcLoading && isFirstMcLoad" class="mc-loading">
+          <span class="spinner small"></span>
+          <span>正在查询服务器状态...</span>
+        </div>
+
+        <!-- 状态信息横向展示 -->
+        <div v-else-if="mcStatus" class="mc-stats">
+          <div v-if="mcStatus.online" class="stats-grid">
+            <div v-if="mcStatus.version" class="stat-item">
+              <span class="stat-icon">🎮</span>
+              <div class="stat-info">
+                <span class="stat-label">游戏版本</span>
+                <span class="stat-value">{{ mcStatus.version }}</span>
+              </div>
+            </div>
+            <div v-if="mcStatus.players" class="stat-item highlight">
+              <span class="stat-icon">👥</span>
+              <div class="stat-info">
+                <span class="stat-label">在线人数</span>
+                <span class="stat-value">{{ mcStatus.players.online }} / {{ mcStatus.players.max }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 在线玩家列表 -->
+          <div v-if="mcStatus.online && mcStatus.players?.list?.length" class="players-section">
+            <div class="players-header">
+              <span>在线玩家</span>
+              <span class="player-count">{{ mcStatus.players.list.length }}人</span>
+            </div>
+            <div class="players-grid">
+              <span v-for="player in mcStatus.players.list" :key="player" class="player-item">
+                {{ player }}
+              </span>
+            </div>
+          </div>
+
+          <!-- MOTD -->
+          <div v-if="mcStatus.online && mcStatus.motd" class="motd-box">
+            <span class="motd-label">📢 服务器公告</span>
+            <div class="motd-content">{{ mcStatus.motd }}</div>
+          </div>
+        </div>
+
+        <!-- 描述 -->
+        <p v-if="item.description" class="mc-description">{{ item.description }}</p>
       </div>
     </div>
   </div>
@@ -397,8 +397,8 @@ onUnmounted(() => {
 }
 
 .spinner.small {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-width: 2px;
   margin: 0;
 }
@@ -418,6 +418,7 @@ onUnmounted(() => {
   margin-bottom: 1.5rem;
 }
 
+/* 通用卡片样式 */
 .detail-card {
   background: var(--card-bg);
   border-radius: var(--radius-xl);
@@ -431,13 +432,11 @@ onUnmounted(() => {
   align-items: center;
   gap: 1.5rem;
   margin-bottom: 1.5rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border-color);
 }
 
 .card-icon.large {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   border-radius: var(--radius-lg);
   background: linear-gradient(135deg, var(--primary-light) 0%, rgba(139, 92, 246, 0.1) 100%);
   display: flex;
@@ -447,14 +446,14 @@ onUnmounted(() => {
 }
 
 .card-icon.large .icon-image {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   object-fit: contain;
   border-radius: 8px;
 }
 
 .card-icon.large .icon-emoji {
-  font-size: 2.5rem;
+  font-size: 2rem;
 }
 
 .card-title-area {
@@ -462,7 +461,7 @@ onUnmounted(() => {
 }
 
 .page-title {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0 0 0.5rem 0;
@@ -476,103 +475,49 @@ onUnmounted(() => {
 
 .type-badge {
   display: inline-block;
-  padding: 0.35rem 0.75rem;
+  padding: 0.3rem 0.6rem;
   border-radius: 6px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
-.type-badge.web {
-  background: rgba(59, 130, 246, 0.15);
-  color: #3b82f6;
-}
-
-.type-badge.service {
-  background: rgba(139, 92, 246, 0.15);
-  color: #8b5cf6;
-}
-
-.type-badge.mc-java {
-  background: rgba(139, 69, 19, 0.15);
-  color: #8b4513;
-}
-
-.type-badge.mc-pe {
-  background: rgba(34, 139, 34, 0.15);
-  color: #228b22;
-}
+.type-badge.web { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.type-badge.service { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
 
 .status-badge {
-  display: inline-block;
-  padding: 0.35rem 0.75rem;
+  padding: 0.3rem 0.6rem;
   border-radius: 6px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
-.status-badge.online {
-  background: rgba(34, 197, 94, 0.15);
-  color: var(--success-color);
-}
-
-.status-badge.offline {
-  background: rgba(239, 68, 68, 0.15);
-  color: var(--danger-color);
-}
-
-.status-badge.unknown {
-  background: rgba(156, 163, 175, 0.15);
-  color: var(--text-secondary);
-}
+.status-badge.online { background: rgba(34, 197, 94, 0.15); color: var(--success-color); }
+.status-badge.offline { background: rgba(239, 68, 68, 0.15); color: var(--danger-color); }
+.status-badge.unknown { background: rgba(156, 163, 175, 0.15); color: var(--text-secondary); }
 
 .description {
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: var(--text-secondary);
-  line-height: 1.7;
+  line-height: 1.6;
   margin: 0 0 1.5rem 0;
 }
 
-.info-section {
+.features-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-bottom: 1.5rem;
 }
 
-.section-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 0.75rem 0;
-}
-
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 0.75rem;
-}
-
-.feature-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
+.feature-tag {
+  padding: 0.4rem 0.8rem;
   background: var(--glass-bg);
-  border-radius: var(--radius-md);
-  font-size: 0.9rem;
-  color: var(--text-primary);
-}
-
-.feature-icon {
-  color: var(--success-color);
-  font-weight: bold;
-}
-
-.contact {
-  font-size: 0.95rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
   color: var(--text-secondary);
-  margin: 0;
 }
 
 .link-section {
-  margin-top: 1.5rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border-color);
 }
@@ -609,194 +554,358 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-/* MC Card specific */
-.server-info {
-  background: var(--glass-bg);
-  border-radius: var(--radius-md);
-  padding: 1.25rem;
-  margin-bottom: 1rem;
+/* MC 分享卡片美化 */
+.mc-share-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow), 0 0 40px rgba(99, 102, 241, 0.1);
+  border: 1px solid var(--border-color);
 }
 
-.server-address {
+.mc-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1rem;
-  background: var(--bg-color);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  margin-bottom: 1rem;
-  transition: background var(--transition-fast);
-}
-
-.server-address:hover {
-  background: var(--primary-light);
-}
-
-.server-address .label {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-}
-
-.server-address .value {
-  flex: 1;
-  font-family: monospace;
-  font-weight: 600;
-  font-size: 1.1rem;
-  color: var(--primary-color);
-}
-
-.server-address .copy-icon {
-  opacity: 0.5;
-  transition: opacity var(--transition-fast);
-}
-
-.server-address:hover .copy-icon {
-  opacity: 1;
-}
-
-.status-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 0;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, var(--primary-light) 0%, rgba(139, 92, 246, 0.08) 100%);
   border-bottom: 1px solid var(--border-color);
 }
 
-.status-row:last-child {
-  border-bottom: none;
-}
-
-.status-row .label {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-.status-row .value {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.status-row .value.players {
-  color: var(--success-color);
-  font-size: 1.1rem;
-}
-
-.status-loading {
+.mc-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-lg);
+  background: var(--card-bg);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
+  justify-content: center;
+  font-size: 2rem;
+  box-shadow: var(--shadow);
 }
 
-.players-list {
-  padding-top: 1rem;
-}
-
-.players-list .label {
-  display: block;
-  margin-bottom: 0.75rem;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-.player-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.player-tag {
-  padding: 0.35rem 0.75rem;
-  background: var(--primary-light);
-  color: var(--primary-color);
+.mc-icon img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
   border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
 }
 
-.motd-section {
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-color);
-  margin-top: 1rem;
+.mc-title {
+  flex: 1;
+  min-width: 0;
 }
 
-.motd-section .label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-.motd-text {
-  padding: 0.75rem;
-  background: var(--bg-color);
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
+.mc-title h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
   color: var(--text-primary);
-  white-space: pre-wrap;
+  margin: 0 0 0.4rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.mc-footer {
+.mc-badges {
   display: flex;
   gap: 0.5rem;
 }
 
-.refresh-btn {
-  flex: 1;
-  padding: 0.875rem;
-  background: var(--glass-bg);
+.version-badge {
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.version-badge.mc-java { background: rgba(139, 69, 19, 0.15); color: #8b4513; }
+.version-badge.mc-pe { background: rgba(34, 139, 34, 0.15); color: #228b22; }
+
+.online-badge {
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.online-badge.online { background: rgba(34, 197, 94, 0.15); color: var(--success-color); }
+.online-badge.offline { background: rgba(239, 68, 68, 0.15); color: var(--danger-color); }
+
+.mc-refresh {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.refresh-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  font-size: 0.95rem;
+  font-size: 1rem;
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
-.refresh-btn:hover:not(:disabled) {
-  background: var(--primary-light);
+.refresh-icon-btn:hover:not(:disabled) {
   border-color: var(--primary-color);
-  color: var(--primary-color);
+  background: var(--primary-light);
 }
 
-.refresh-btn:disabled {
+.refresh-icon-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.auto-refresh-btn {
-  padding: 0.875rem 1.25rem;
-  background: var(--glass-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  min-width: 90px;
+.refresh-icon-btn.spinning {
+  animation: spin 1s linear infinite;
 }
 
-.auto-refresh-btn:hover {
-  background: var(--primary-light);
+.auto-btn {
+  min-width: 40px;
+  height: 36px;
+  padding: 0 0.6rem;
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.auto-btn:hover {
   border-color: var(--primary-color);
 }
 
-.auto-refresh-btn.active {
+.auto-btn.active {
   background: rgba(34, 197, 94, 0.1);
   border-color: var(--success-color);
   color: var(--success-color);
 }
 
+/* 服务器地址 */
+.mc-address {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 1.25rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, var(--glass-bg) 0%, rgba(99, 102, 241, 0.05) 100%);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mc-address:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-light);
+}
+
+.address-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.address-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.address-value {
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.copy-btn {
+  padding: 0.5rem 1rem;
+  background: var(--primary-color);
+  color: white;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+}
+
+.copy-btn.copied {
+  background: var(--success-color);
+}
+
+/* 加载状态 */
+.mc-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+/* 状态信息横向展示 */
+.mc-stats {
+  padding: 0 1.25rem 1.25rem;
+}
+
+.stats-grid {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--glass-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.stat-item.highlight {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.stat-icon {
+  font-size: 1.5rem;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stat-item.highlight .stat-value {
+  color: var(--success-color);
+}
+
+/* 玩家列表 */
+.players-section {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--glass-bg);
+  border-radius: var(--radius-md);
+}
+
+.players-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.player-count {
+  padding: 0.2rem 0.5rem;
+  background: var(--primary-light);
+  color: var(--primary-color);
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.players-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.player-item {
+  padding: 0.35rem 0.75rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+/* MOTD */
+.motd-box {
+  padding: 1rem;
+  background: var(--glass-bg);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--primary-color);
+}
+
+.motd-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.motd-content {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* MC 描述 */
+.mc-description {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border-color);
+  background: var(--glass-bg);
+}
+
+/* 响应式 */
 @media (max-width: 768px) {
   .share-view {
     padding: 1rem;
   }
 
-  .detail-card {
-    padding: 1.5rem;
+  .mc-header {
+    flex-wrap: wrap;
+  }
+
+  .mc-title h1 {
+    font-size: 1.2rem;
+  }
+
+  .mc-refresh {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+  }
+
+  .stats-grid {
+    flex-direction: column;
+  }
+
+  .mc-address {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .copy-btn {
+    width: 100%;
+    text-align: center;
   }
 
   .card-header {
@@ -804,16 +913,8 @@ onUnmounted(() => {
     text-align: center;
   }
 
-  .page-title {
-    font-size: 1.5rem;
-  }
-
   .badges {
     justify-content: center;
-  }
-
-  .features-grid {
-    grid-template-columns: 1fr;
   }
 
   .link-btn {

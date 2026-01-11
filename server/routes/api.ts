@@ -19,23 +19,19 @@ export function createApiRouter(storage: StorageAdapter): Router {
   router.get('/data', (req, res) => controller.getData(req, res));
   router.post('/data', (req, res) => controller.saveData(req, res));
 
-  // Webhook API endpoints (Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6)
-  // Web type - update link
+  // Webhook API endpoints - Web type (link)
   router.get('/link', authMiddleware, (req, res) => controller.getLink(req, res));
   router.post('/link', authMiddleware, (req, res) => controller.updateLink(req, res));
 
-  // Service type - update service info
-  router.get('/webhook/service', authMiddleware, (req, res) => controller.getItem(req, res));
-  router.post('/webhook/service', authMiddleware, (req, res) => controller.updateService(req, res));
+  // Webhook API endpoints - MC type (mc)
+  router.get('/mc', authMiddleware, (req, res) => controller.getMcServer(req, res));
+  router.post('/mc', authMiddleware, (req, res) => controller.updateMcServer(req, res));
 
-  // MC type - update server info
-  router.get('/webhook/mc', authMiddleware, (req, res) => controller.getItem(req, res));
-  router.post('/webhook/mc', authMiddleware, (req, res) => controller.updateMcServer(req, res));
+  // Webhook API endpoints - Service type (service)
+  router.get('/service', authMiddleware, (req, res) => controller.getService(req, res));
+  router.post('/service', authMiddleware, (req, res) => controller.updateService(req, res));
 
-  // Generic item endpoint
-  router.get('/webhook/item', authMiddleware, (req, res) => controller.getItem(req, res));
-
-  // MC Server Status API
+  // MC Server Status API (public, no auth)
   router.get('/mc-status', (req, res) => mcController.getStatus(req, res));
 
   return router;

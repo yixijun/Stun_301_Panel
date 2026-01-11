@@ -311,4 +311,110 @@ export class NavController {
       });
     }
   }
+
+  /**
+   * GET /api/service - Get service info by appid
+   * Similar to getLink but returns service-specific info
+   */
+  async getService(req: Request, res: Response): Promise<void> {
+    try {
+      const appid = req.query.appid as string;
+
+      if (!appid) {
+        res.status(400).json({
+          success: false,
+          error: 'Missing required parameter: appid',
+          code: 400
+        });
+        return;
+      }
+
+      const navItem = await this.storage.getNavItem(appid);
+
+      if (!navItem) {
+        res.status(404).json({
+          success: false,
+          error: 'AppID not found',
+          code: 404
+        });
+        return;
+      }
+
+      if (navItem.type !== 'service') {
+        res.status(400).json({
+          success: false,
+          error: 'NavItem is not a service type',
+          code: 400
+        });
+        return;
+      }
+
+      res.json({ 
+        success: true, 
+        status: navItem.serviceInfo?.status || 'unknown',
+        link: navItem.link,
+        description: navItem.serviceInfo?.description,
+        features: navItem.serviceInfo?.features,
+        contact: navItem.serviceInfo?.contact
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+        code: 500
+      });
+    }
+  }
+
+  /**
+   * GET /api/mc - Get MC server info by appid
+   * Similar to getLink but returns MC server-specific info
+   */
+  async getMcServer(req: Request, res: Response): Promise<void> {
+    try {
+      const appid = req.query.appid as string;
+
+      if (!appid) {
+        res.status(400).json({
+          success: false,
+          error: 'Missing required parameter: appid',
+          code: 400
+        });
+        return;
+      }
+
+      const navItem = await this.storage.getNavItem(appid);
+
+      if (!navItem) {
+        res.status(404).json({
+          success: false,
+          error: 'AppID not found',
+          code: 404
+        });
+        return;
+      }
+
+      if (navItem.type !== 'mc-java' && navItem.type !== 'mc-pe') {
+        res.status(400).json({
+          success: false,
+          error: 'NavItem is not a MC server type',
+          code: 400
+        });
+        return;
+      }
+
+      res.json({ 
+        success: true, 
+        host: navItem.mcServer?.host || '',
+        port: navItem.mcServer?.port || (navItem.type === 'mc-java' ? 25565 : 19132),
+        type: navItem.type
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+        code: 500
+      });
+    }
+  }
 }

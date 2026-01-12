@@ -628,6 +628,8 @@ async function handleUpdateService(storage: KVAdapter, url: URL, request: Reques
       features?: string[];
       contact?: string;
       link?: string;
+      host?: string;
+      port?: number;
     } = {};
     try {
       body = await request.json();
@@ -640,6 +642,9 @@ async function handleUpdateService(storage: KVAdapter, url: URL, request: Reques
     const features = body.features;
     const contact = url.searchParams.get('contact') || body.contact;
     const link = url.searchParams.get('link') || body.link;
+    const host = url.searchParams.get('host') || body.host;
+    const portStr = url.searchParams.get('port');
+    const port = portStr ? parseInt(portStr, 10) : body.port;
 
     if (!item.serviceInfo) {
       item.serviceInfo = {};
@@ -650,6 +655,8 @@ async function handleUpdateService(storage: KVAdapter, url: URL, request: Reques
     if (features) item.serviceInfo.features = features;
     if (contact) item.serviceInfo.contact = contact;
     if (link) item.link = link;
+    if (host) item.serviceInfo.host = host;
+    if (port) item.serviceInfo.port = port;
 
     await storage.saveData(data);
     return jsonResponse({ success: true, message: 'Service info updated' });

@@ -31,6 +31,8 @@ const navItemForm = ref({
   serviceDescription: '',
   serviceFeatures: '',
   serviceContact: '',
+  serviceHost: '',
+  servicePort: '',
   // MC specific
   mcHost: '',
   mcPort: ''
@@ -50,7 +52,7 @@ const modalTitle = computed(() => {
 });
 
 const showLinkField = computed(() => {
-  return navItemForm.value.type === 'web' || navItemForm.value.type === 'service';
+  return navItemForm.value.type === 'web';
 });
 
 const showServiceFields = computed(() => {
@@ -96,6 +98,8 @@ onMounted(() => {
         serviceDescription: item.serviceInfo?.description || '',
         serviceFeatures: item.serviceInfo?.features?.join(', ') || '',
         serviceContact: item.serviceInfo?.contact || '',
+        serviceHost: item.serviceInfo?.host || '',
+        servicePort: item.serviceInfo?.port?.toString() || '',
         mcHost: item.mcServer?.host || '',
         mcPort: item.mcServer?.port?.toString() || ''
       };
@@ -201,7 +205,9 @@ function handleNavItemSubmit() {
       features: navItemForm.value.serviceFeatures.trim() 
         ? navItemForm.value.serviceFeatures.split(',').map((f: string) => f.trim()).filter(Boolean)
         : undefined,
-      contact: navItemForm.value.serviceContact.trim() || undefined
+      contact: navItemForm.value.serviceContact.trim() || undefined,
+      host: navItemForm.value.serviceHost.trim() || undefined,
+      port: navItemForm.value.servicePort ? parseInt(navItemForm.value.servicePort) : undefined
     };
   }
   
@@ -343,6 +349,37 @@ function handleOverlayClick(event: Event) {
               </select>
             </div>
 
+            <div class="form-row">
+              <div class="form-group">
+                <label for="serviceHost">服务器地址</label>
+                <input
+                  id="serviceHost"
+                  v-model="navItemForm.serviceHost"
+                  type="text"
+                  placeholder="IP 或域名"
+                />
+              </div>
+              <div class="form-group port-field">
+                <label for="servicePort">端口</label>
+                <input
+                  id="servicePort"
+                  v-model="navItemForm.servicePort"
+                  type="text"
+                  placeholder="端口号"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="serviceLink">访问链接 <span class="optional">(可选)</span></label>
+              <input
+                id="serviceLink"
+                v-model="navItemForm.link"
+                type="text"
+                placeholder="https://example.com 或留空"
+              />
+            </div>
+
             <div class="form-group">
               <label for="serviceDescription">详细描述</label>
               <textarea
@@ -481,5 +518,24 @@ input:disabled {
   margin: 0 0 1rem 0;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--border-color);
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-row .port-field {
+  flex: 0 0 120px;
+}
+
+.optional {
+  font-weight: 400;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
 }
 </style>

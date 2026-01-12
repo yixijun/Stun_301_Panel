@@ -38,6 +38,7 @@ interface ShareLink {
   params?: string;      // 额外携带的参数
   expiresAt?: number;   // 过期时间戳，undefined 表示永久
   createdAt: number;
+  requireAuth?: boolean; // 是否需要登录才能访问
 }
 
 interface AccessLog {
@@ -285,6 +286,13 @@ async function handleGo(storage: KVAdapter, shareId: string, request: Request): 
       return new Response('Target not found', { status: 404 });
     }
     
+    // If requireAuth is true, redirect to share view page for login
+    if (shareLink.requireAuth) {
+      const url = new URL(request.url);
+      const baseUrl = `${url.protocol}//${url.host}`;
+      return Response.redirect(`${baseUrl}/share/${shareLink.appid}?auth=required&shareId=${shareId}`, 302);
+    }
+    
     // Record access log
     const accessLog: AccessLog = {
       id: generateShareId() + Date.now().toString(36),
@@ -365,6 +373,7 @@ async function handleCreateShare(storage: KVAdapter, request: Request): Promise<
       appid: string;
       params?: string;
       expiresIn?: number; // minutes, 0 or undefined = permanent
+      requireAuth?: boolean; // 是否需要登录才能访问
     };
     
     if (!body.appid) {
@@ -386,6 +395,7 @@ async function handleCreateShare(storage: KVAdapter, request: Request): Promise<
       params: body.params,
       expiresAt: body.expiresIn ? Date.now() + body.expiresIn * 60 * 1000 : undefined,
       createdAt: Date.now(),
+      requireAuth: body.requireAuth,
     };
     
     // Save share link
@@ -402,6 +412,7 @@ async function handleCreateShare(storage: KVAdapter, request: Request): Promise<
         url: `/api/go/${shareLink.id}`,
         expiresAt: shareLink.expiresAt,
         permanent: !shareLink.expiresAt,
+        requireAuth: shareLink.requireAuth,
       }
     });
   } catch {
@@ -421,6 +432,7 @@ async function handleListShares(storage: KVAdapter): Promise<Response> {
       permanent: !s.expiresAt,
       expired: s.expiresAt ? Date.now() > s.expiresAt : false,
       createdAt: s.createdAt,
+      requireAuth: s.requireAuth,
     }));
     
     return jsonResponse({ success: true, shareLinks });

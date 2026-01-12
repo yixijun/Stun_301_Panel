@@ -89,11 +89,12 @@ export const apiClient = {
   /**
    * Create a share link
    */
-  async createShareLink(appid: string, params?: string, expiresIn?: number): Promise<CreateShareResponse['shareLink']> {
+  async createShareLink(appid: string, params?: string, expiresIn?: number, requireAuth?: boolean): Promise<CreateShareResponse['shareLink']> {
     const response = await axiosInstance.post<CreateShareResponse>('/share', {
       appid,
       params,
-      expiresIn
+      expiresIn,
+      requireAuth
     });
     return response.data.shareLink;
   },

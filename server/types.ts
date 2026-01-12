@@ -22,6 +22,8 @@ export interface ServiceInfo {
   description?: string;
   features?: string[];
   contact?: string;
+  host?: string;        // 服务器地址
+  port?: number;        // 服务器端口
 }
 
 /**

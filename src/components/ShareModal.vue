@@ -19,6 +19,7 @@ const selectedAppId = ref('');
 const extraParams = ref('');
 const paramType = ref<'path' | 'query'>('path');
 const expiresIn = ref(0);
+const requireAuth = ref(false);
 
 const navItemOptions = computed(() => store.navItems);
 
@@ -46,7 +47,8 @@ async function createShareLink() {
     await apiClient.createShareLink(
       selectedAppId.value,
       params,
-      expiresIn.value || undefined
+      expiresIn.value || undefined,
+      requireAuth.value
     );
     await loadShareLinks();
     showCreateForm.value = false;
@@ -54,6 +56,7 @@ async function createShareLink() {
     extraParams.value = '';
     paramType.value = 'path';
     expiresIn.value = 0;
+    requireAuth.value = false;
   } catch (e) {
     console.error('Failed to create share link:', e);
   } finally {
@@ -104,6 +107,18 @@ function formatRelativeTime(timestamp: number): string {
 function getNavItemName(appid: string): string {
   const item = store.navItems.find(i => i.appid === appid);
   return item?.name || appid;
+}
+
+function getNavItemType(appid: string): string {
+  const item = store.navItems.find(i => i.appid === appid);
+  const type = item?.type || 'web';
+  const typeMap: Record<string, string> = {
+    'web': '🌐',
+    'service': '🖥️',
+    'mc-java': '☕',
+    'mc-pe': '📱'
+  };
+  return typeMap[type] || '🔗';
 }
 
 onMounted(loadShareLinks);
@@ -185,6 +200,14 @@ onMounted(loadShareLinks);
                 </select>
               </div>
 
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" v-model="requireAuth" />
+                  <span class="checkbox-text">🔒 需要登录才能访问</span>
+                </label>
+                <p class="form-hint">开启后，访问者需要先登录才能查看分享内容</p>
+              </div>
+
               <div class="form-actions">
                 <button class="btn-secondary" @click="showCreateForm = false">取消</button>
                 <button 
@@ -218,10 +241,11 @@ onMounted(loadShareLinks);
             >
               <div class="card-header">
                 <div class="card-title">
-                  <span class="nav-icon">🔗</span>
+                  <span class="nav-icon">{{ getNavItemType(link.appid) }}</span>
                   {{ getNavItemName(link.appid) }}
                 </div>
                 <div class="card-badges">
+                  <span v-if="link.requireAuth" class="badge badge-auth">🔒 需登录</span>
                   <span v-if="link.permanent" class="badge badge-success">永久</span>
                   <span v-else-if="link.expired" class="badge badge-danger">已过期</span>
                   <span v-else class="badge badge-warning">限时</span>
@@ -519,6 +543,44 @@ onMounted(loadShareLinks);
   color: var(--text-secondary);
 }
 
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.75rem 1rem;
+  background: var(--glass-bg);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.checkbox-label:hover {
+  border-color: var(--primary-color);
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary-color);
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkbox-text {
+  color: var(--primary-color);
+}
+
+.checkbox-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.form-hint {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
 .form-actions {
   display: flex;
   gap: 0.75rem;
@@ -715,6 +777,12 @@ onMounted(loadShareLinks);
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%);
   color: #d97706;
   border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.badge-auth {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0.05) 100%);
+  color: var(--primary-color);
+  border: 1px solid rgba(99, 102, 241, 0.2);
 }
 
 .card-url {

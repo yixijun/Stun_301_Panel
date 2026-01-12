@@ -20,6 +20,8 @@ export interface ServiceInfo {
   description?: string;
   features?: string[];
   contact?: string;
+  host?: string;        // 服务器地址
+  port?: number;        // 服务器端口
 }
 
 /**
@@ -79,6 +81,7 @@ export interface ShareLink {
   params?: string;      // 额外携带的参数
   expiresAt?: number;   // 过期时间戳，undefined 表示永久
   createdAt: number;
+  requireAuth?: boolean; // 是否需要登录才能访问
 }
 
 /**
@@ -92,6 +95,7 @@ export interface ShareLinkDisplay {
   permanent: boolean;
   expired: boolean;
   createdAt: number;
+  requireAuth?: boolean;
 }
 
 /**

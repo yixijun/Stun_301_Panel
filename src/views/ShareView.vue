@@ -20,6 +20,23 @@ const countdown = ref(5);
 const copied = ref(false);
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
+const serviceCopied = ref(false);
+
+// 登录相关
+const requiresAuth = ref(false);
+const isAuthChecking = ref(true);
+const showLoginForm = ref(false);
+const loginUsername = ref('');
+const loginPassword = ref('');
+const loginError = ref('');
+const loginLoading = ref(false);
+
+// Service address computed
+const serviceAddress = computed(() => {
+  if (!item.value?.serviceInfo?.host) return '';
+  const { host, port } = item.value.serviceInfo;
+  return port ? `${host}:${port}` : host;
+});
 
 // MC server computed
 const serverAddress = computed(() => {
@@ -50,6 +67,28 @@ async function loadItem() {
   error.value = null;
   
   try {
+    // 检查是否需要登录验证
+    const authRequired = route.query.auth === 'required';
+    requiresAuth.value = authRequired;
+    
+    if (authRequired) {
+      // 先加载数据以获取认证信息
+      if (!store.navItems.length) {
+        await store.loadData();
+      }
+      
+      // 检查是否已登录
+      const isLoggedIn = store.checkAuth();
+      if (!isLoggedIn) {
+        showLoginForm.value = true;
+        isAuthChecking.value = false;
+        isLoading.value = false;
+        return;
+      }
+    }
+    
+    isAuthChecking.value = false;
+    
     if (!store.navItems.length) {
       await store.loadData();
     }
@@ -68,6 +107,54 @@ async function loadItem() {
       startAutoRefresh();
     }
   } catch (e) {
+    error.value = '加载失败';
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+async function handleLogin() {
+  if (!loginUsername.value.trim() || !loginPassword.value.trim()) {
+    loginError.value = '请输入用户名和密码';
+    return;
+  }
+  
+  loginLoading.value = true;
+  loginError.value = '';
+  
+  try {
+    const success = await store.login(loginUsername.value.trim(), loginPassword.value);
+    if (success) {
+      showLoginForm.value = false;
+      // 重新加载内容
+      await loadItemContent();
+    } else {
+      loginError.value = '用户名或密码错误';
+    }
+  } catch {
+    loginError.value = '登录失败，请重试';
+  } finally {
+    loginLoading.value = false;
+  }
+}
+
+async function loadItemContent() {
+  isLoading.value = true;
+  try {
+    const appid = route.params.appid as string;
+    item.value = store.getNavItemByAppId(appid) || null;
+    
+    if (!item.value) {
+      error.value = '未找到该导航项';
+      return;
+    }
+    
+    // If MC type, fetch server status and start auto refresh
+    if (item.value.type === 'mc-java' || item.value.type === 'mc-pe') {
+      await fetchMcStatus();
+      startAutoRefresh();
+    }
+  } catch {
     error.value = '加载失败';
   } finally {
     isLoading.value = false;
@@ -143,6 +230,12 @@ function copyAddress() {
   setTimeout(() => { copied.value = false; }, 2000);
 }
 
+function copyServiceAddress() {
+  navigator.clipboard.writeText(serviceAddress.value);
+  serviceCopied.value = true;
+  setTimeout(() => { serviceCopied.value = false; }, 2000);
+}
+
 function goHome() {
   router.push('/');
 }
@@ -179,7 +272,44 @@ onUnmounted(() => {
       </button>
     </header>
 
-    <div v-if="isLoading" class="loading-state">
+    <!-- 登录表单 -->
+    <div v-if="showLoginForm" class="login-section">
+      <div class="login-card">
+        <div class="login-header">
+          <span class="login-icon">🔒</span>
+          <h2>需要登录</h2>
+          <p>此分享链接需要登录后才能查看</p>
+        </div>
+        <form @submit.prevent="handleLogin" class="login-form">
+          <div class="form-group">
+            <label for="username">用户名</label>
+            <input 
+              id="username"
+              v-model="loginUsername" 
+              type="text" 
+              placeholder="请输入用户名"
+              autocomplete="username"
+            />
+          </div>
+          <div class="form-group">
+            <label for="password">密码</label>
+            <input 
+              id="password"
+              v-model="loginPassword" 
+              type="password" 
+              placeholder="请输入密码"
+              autocomplete="current-password"
+            />
+          </div>
+          <p v-if="loginError" class="login-error">{{ loginError }}</p>
+          <button type="submit" class="login-btn" :disabled="loginLoading">
+            {{ loginLoading ? '登录中...' : '登录' }}
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div v-else-if="isLoading" class="loading-state">
       <div class="spinner"></div>
       <p>加载中...</p>
     </div>
@@ -227,6 +357,18 @@ onUnmounted(() => {
           </div>
         </div>
         <p v-if="item.description" class="description">{{ item.description }}</p>
+        
+        <!-- 服务器地址 (IP + 端口) -->
+        <div v-if="item.serviceInfo?.host" class="service-address" @click="copyServiceAddress">
+          <div class="address-content">
+            <span class="address-label">服务器地址</span>
+            <span class="address-value">{{ serviceAddress }}</span>
+          </div>
+          <span class="copy-btn" :class="{ copied: serviceCopied }">
+            {{ serviceCopied ? '✓ 已复制' : '📋 复制' }}
+          </span>
+        </div>
+        
         <div v-if="item.serviceInfo?.features?.length" class="features-row">
           <span v-for="feature in item.serviceInfo.features" :key="feature" class="feature-tag">
             {{ feature }}
@@ -372,6 +514,104 @@ onUnmounted(() => {
   color: var(--primary-color);
 }
 
+/* 登录表单样式 */
+.login-section {
+  max-width: 400px;
+  margin: 2rem auto;
+}
+
+.login-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-xl);
+  padding: 2.5rem;
+  box-shadow: var(--shadow), 0 0 40px rgba(99, 102, 241, 0.1);
+  border: 1px solid var(--border-color);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.login-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.login-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.login-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.login-form .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.login-form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.login-form input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.login-form input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px var(--primary-light);
+}
+
+.login-error {
+  color: var(--danger-color);
+  font-size: 0.85rem;
+  margin: 0 0 1rem 0;
+  text-align: center;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.login-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -10px rgba(99, 102, 241, 0.5);
+}
+
+.login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .content {
   max-width: 700px;
   margin: 0 auto;
@@ -507,6 +747,25 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
+}
+
+/* 服务地址样式 */
+.service-address {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 1.25rem 0;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, var(--glass-bg) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.service-address:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-light);
 }
 
 .feature-tag {

@@ -85,6 +85,11 @@ function isIconUrl(icon?: string): boolean {
 
     <p v-if="item.description" class="card-description">{{ item.description }}</p>
 
+    <div v-if="item.serviceInfo?.host" class="server-address">
+      <span class="address-icon">🌐</span>
+      <span class="address-text">{{ item.serviceInfo.host }}{{ item.serviceInfo.port ? ':' + item.serviceInfo.port : '' }}</span>
+    </div>
+
     <div v-if="item.serviceInfo?.features?.length" class="features">
       <span v-for="feature in item.serviceInfo.features.slice(0, 3)" :key="feature" class="feature-tag">
         {{ feature }}

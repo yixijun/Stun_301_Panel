@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import type { NavItem } from '../types';
 import { useNavStore } from '../stores/navStore';
 
@@ -12,6 +13,7 @@ const emit = defineEmits<{
 }>();
 
 const store = useNavStore();
+const copiedField = ref<string | null>(null);
 
 function handleClick() {
   if (!store.isEditMode && props.item.link) {
@@ -39,6 +41,20 @@ function isIconUrl(icon?: string): boolean {
   if (!icon) return false;
   return /^(https?:\/\/|\/)/.test(icon);
 }
+
+// 服务类型相关
+function copyToClipboard(text: string, field: string, event: Event) {
+  event.stopPropagation();
+  navigator.clipboard.writeText(text);
+  copiedField.value = field;
+  setTimeout(() => { copiedField.value = null; }, 1500);
+}
+
+function getServiceAddress(): string {
+  if (!props.item.serviceInfo?.host) return '';
+  const { host, port } = props.item.serviceInfo;
+  return port ? `${host}:${port}` : host;
+}
 </script>
 
 <template>
@@ -64,6 +80,39 @@ function isIconUrl(icon?: string): boolean {
     <div class="card-content">
       <h3 class="card-title">{{ item.name }}</h3>
       <p v-if="item.description" class="card-description">{{ item.description }}</p>
+      
+      <!-- 服务类型显示 IP 和端口 -->
+      <div v-if="item.type === 'service' && item.serviceInfo?.host" class="service-info" @click.stop>
+        <div class="info-row">
+          <span 
+            class="info-item clickable" 
+            :class="{ copied: copiedField === 'host' }"
+            @click="copyToClipboard(item.serviceInfo.host!, 'host', $event)"
+            title="点击复制 IP"
+          >
+            <span class="info-label">IP</span>
+            <span class="info-value">{{ item.serviceInfo.host }}</span>
+          </span>
+          <span 
+            v-if="item.serviceInfo.port"
+            class="info-item clickable" 
+            :class="{ copied: copiedField === 'port' }"
+            @click="copyToClipboard(String(item.serviceInfo.port), 'port', $event)"
+            title="点击复制端口"
+          >
+            <span class="info-label">端口</span>
+            <span class="info-value">{{ item.serviceInfo.port }}</span>
+          </span>
+          <button 
+            class="copy-all-btn"
+            :class="{ copied: copiedField === 'all' }"
+            @click="copyToClipboard(getServiceAddress(), 'all', $event)"
+            title="复制完整地址"
+          >
+            {{ copiedField === 'all' ? '✓' : '📋' }}
+          </button>
+        </div>
+      </div>
     </div>
     
     <div v-if="store.isEditMode" class="card-actions">
@@ -196,6 +245,87 @@ function isIconUrl(icon?: string): boolean {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   line-height: 1.5;
+}
+
+/* 服务信息样式 */
+.service-info {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border-color);
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.info-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  background: var(--glass-bg);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  transition: all var(--transition-fast);
+}
+
+.info-item.clickable {
+  cursor: pointer;
+}
+
+.info-item.clickable:hover {
+  background: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.info-item.copied {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--success-color);
+}
+
+.info-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.info-value {
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.info-item.clickable:hover .info-value,
+.info-item.copied .info-value {
+  color: inherit;
+}
+
+.copy-all-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: var(--primary-light);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.copy-all-btn:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: scale(1.1);
+}
+
+.copy-all-btn.copied {
+  background: var(--success-color);
+  color: white;
 }
 
 .card-actions {

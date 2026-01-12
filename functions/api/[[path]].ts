@@ -748,7 +748,7 @@ export async function onRequest(context: CFContext): Promise<Response> {
       }
       break;
 
-    case 'link':
+    case 'webhook/web':
       if (method === 'GET') {
         return handleGetLink(storage, url);
       }

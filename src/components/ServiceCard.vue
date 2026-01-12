@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import type { NavItem } from '../types';
 import { useNavStore } from '../stores/navStore';
 import { useRouter } from 'vue-router';
@@ -15,6 +15,7 @@ const emit = defineEmits<{
 
 const store = useNavStore();
 const router = useRouter();
+const copiedField = ref<string | null>(null);
 
 const statusClass = computed(() => {
   return props.item.serviceInfo?.status || 'unknown';
@@ -53,6 +54,19 @@ function isIconUrl(icon?: string): boolean {
   if (!icon) return false;
   return /^(https?:\/\/|\/)/.test(icon);
 }
+
+function copyToClipboard(text: string, field: string, event: Event) {
+  event.stopPropagation();
+  navigator.clipboard.writeText(text);
+  copiedField.value = field;
+  setTimeout(() => { copiedField.value = null; }, 1500);
+}
+
+function getServiceAddress(): string {
+  if (!props.item.serviceInfo?.host) return '';
+  const { host, port } = props.item.serviceInfo;
+  return port ? `${host}:${port}` : host;
+}
 </script>
 
 <template>
@@ -85,9 +99,36 @@ function isIconUrl(icon?: string): boolean {
 
     <p v-if="item.description" class="card-description">{{ item.description }}</p>
 
-    <div v-if="item.serviceInfo?.host" class="server-address">
-      <span class="address-icon">🌐</span>
-      <span class="address-text">{{ item.serviceInfo.host }}{{ item.serviceInfo.port ? ':' + item.serviceInfo.port : '' }}</span>
+    <div v-if="item.serviceInfo?.host" class="server-address" @click.stop>
+      <div class="address-row">
+        <span 
+          class="address-item clickable"
+          :class="{ copied: copiedField === 'host' }"
+          @click="copyToClipboard(item.serviceInfo.host!, 'host', $event)"
+          title="点击复制 IP"
+        >
+          <span class="address-label">IP</span>
+          <span class="address-value">{{ item.serviceInfo.host }}</span>
+        </span>
+        <span 
+          v-if="item.serviceInfo.port"
+          class="address-item clickable"
+          :class="{ copied: copiedField === 'port' }"
+          @click="copyToClipboard(String(item.serviceInfo.port), 'port', $event)"
+          title="点击复制端口"
+        >
+          <span class="address-label">端口</span>
+          <span class="address-value">{{ item.serviceInfo.port }}</span>
+        </span>
+        <button 
+          class="copy-all-btn"
+          :class="{ copied: copiedField === 'all' }"
+          @click="copyToClipboard(getServiceAddress(), 'all', $event)"
+          title="复制完整地址"
+        >
+          {{ copiedField === 'all' ? '✓' : '📋' }}
+        </button>
+      </div>
     </div>
 
     <div v-if="item.serviceInfo?.features?.length" class="features">
@@ -252,6 +293,90 @@ function isIconUrl(icon?: string): boolean {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* 服务器地址样式 */
+.server-address {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: var(--glass-bg);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-color);
+}
+
+.address-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.address-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  background: var(--card-bg);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  transition: all var(--transition-fast);
+}
+
+.address-item.clickable {
+  cursor: pointer;
+}
+
+.address-item.clickable:hover {
+  background: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.address-item.copied {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--success-color);
+}
+
+.address-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.address-value {
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.address-item.clickable:hover .address-value,
+.address-item.copied .address-value {
+  color: inherit;
+}
+
+.copy-all-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: var(--primary-light);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-left: auto;
+}
+
+.copy-all-btn:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: scale(1.1);
+}
+
+.copy-all-btn.copied {
+  background: var(--success-color);
+  color: white;
 }
 
 .features {

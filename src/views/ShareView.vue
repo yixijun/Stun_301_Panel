@@ -20,7 +20,7 @@ const countdown = ref(5);
 const copied = ref(false);
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
-const serviceCopied = ref(false);
+const serviceCopied = ref<string | null>(null);
 
 // 登录相关
 const requiresAuth = ref(false);
@@ -230,10 +230,10 @@ function copyAddress() {
   setTimeout(() => { copied.value = false; }, 2000);
 }
 
-function copyServiceAddress() {
-  navigator.clipboard.writeText(serviceAddress.value);
-  serviceCopied.value = true;
-  setTimeout(() => { serviceCopied.value = false; }, 2000);
+function copyServiceField(text: string, field: string) {
+  navigator.clipboard.writeText(text);
+  serviceCopied.value = field;
+  setTimeout(() => { serviceCopied.value = null; }, 1500);
 }
 
 function goHome() {
@@ -359,14 +359,36 @@ onUnmounted(() => {
         <p v-if="item.description" class="description">{{ item.description }}</p>
         
         <!-- 服务器地址 (IP + 端口) -->
-        <div v-if="item.serviceInfo?.host" class="service-address" @click="copyServiceAddress">
-          <div class="address-content">
-            <span class="address-label">服务器地址</span>
-            <span class="address-value">{{ serviceAddress }}</span>
+        <div v-if="item.serviceInfo?.host" class="service-address-box">
+          <div class="address-row">
+            <span 
+              class="address-item clickable"
+              :class="{ copied: serviceCopied === 'host' }"
+              @click="copyServiceField(item.serviceInfo.host!, 'host')"
+              title="点击复制 IP"
+            >
+              <span class="address-label">IP</span>
+              <span class="address-value">{{ item.serviceInfo.host }}</span>
+            </span>
+            <span 
+              v-if="item.serviceInfo.port"
+              class="address-item clickable"
+              :class="{ copied: serviceCopied === 'port' }"
+              @click="copyServiceField(String(item.serviceInfo.port), 'port')"
+              title="点击复制端口"
+            >
+              <span class="address-label">端口</span>
+              <span class="address-value">{{ item.serviceInfo.port }}</span>
+            </span>
+            <button 
+              class="copy-all-btn"
+              :class="{ copied: serviceCopied === 'all' }"
+              @click="copyServiceField(serviceAddress, 'all')"
+              title="复制完整地址"
+            >
+              {{ serviceCopied === 'all' ? '✓' : '📋' }}
+            </button>
           </div>
-          <span class="copy-btn" :class="{ copied: serviceCopied }">
-            {{ serviceCopied ? '✓ 已复制' : '📋 复制' }}
-          </span>
         </div>
         
         <div v-if="item.serviceInfo?.features?.length" class="features-row">
@@ -750,22 +772,90 @@ onUnmounted(() => {
 }
 
 /* 服务地址样式 */
-.service-address {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.service-address-box {
   margin: 1.25rem 0;
   padding: 1rem 1.25rem;
   background: linear-gradient(135deg, var(--glass-bg) 0%, rgba(139, 92, 246, 0.05) 100%);
   border: 2px dashed var(--border-color);
   border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-fast);
 }
 
-.service-address:hover {
-  border-color: var(--primary-color);
+.address-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.address-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  background: var(--card-bg);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  transition: all var(--transition-fast);
+  border: 1px solid var(--border-color);
+}
+
+.address-item.clickable {
+  cursor: pointer;
+}
+
+.address-item.clickable:hover {
   background: var(--primary-light);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.address-item.copied {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: var(--success-color);
+  color: var(--success-color);
+}
+
+.address-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+.address-value {
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.address-item.clickable:hover .address-value,
+.address-item.copied .address-value {
+  color: inherit;
+}
+
+.copy-all-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-left: auto;
+}
+
+.copy-all-btn:hover {
+  background: var(--accent-color);
+  transform: scale(1.1);
+}
+
+.copy-all-btn.copied {
+  background: var(--success-color);
 }
 
 .feature-tag {
